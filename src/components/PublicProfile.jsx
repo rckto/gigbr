@@ -341,6 +341,29 @@ Mensagem:
 
           {/* Direct Contact Buttons */}
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+            {profile.website_url && (
+              <a 
+                href={profile.website_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: '8px', 
+                  fontSize: '0.8rem', 
+                  padding: '10px', 
+                  backgroundColor: '#0f172a', 
+                  color: '#ffffff', 
+                  border: 'none',
+                  textDecoration: 'none',
+                  fontWeight: 700,
+                  borderRadius: 'var(--radius-sm)'
+                }}
+              >
+                🔗 Website / Perfil Social
+              </a>
+            )}
             {profile.cnpj ? (
               <a 
                 href={profile.marketplace_url || 'https://www.mercadolivre.com.br'} 

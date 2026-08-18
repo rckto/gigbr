@@ -121,6 +121,9 @@ export async function initializeDatabase() {
       try {
         await pool.query('ALTER TABLE users ADD COLUMN marketplace_url TEXT');
       } catch (err) {}
+      try {
+        await pool.query('ALTER TABLE users ADD COLUMN website_url TEXT');
+      } catch (err) {}
     } catch (error) {
       console.warn('MySQL connection failed. Falling back to High-Fidelity Memory Mode.');
       console.error(error.message);
@@ -214,7 +217,7 @@ export async function updateUser(id, data) {
     const query = `
       UPDATE users SET 
         name = ?, role = ?, email = ?, password = COALESCE(NULLIF(?, ''), password), phone = ?, omb = ?, drt = ?, bio = ?, avatar = ?, 
-        registration_type = ?, cpf = ?, cnpj = ?, pix_type = ?, pix_key = ?, city = ?, state = ?, is_vetted = ?, marketplace_url = ?
+        registration_type = ?, cpf = ?, cnpj = ?, pix_type = ?, pix_key = ?, city = ?, state = ?, is_vetted = ?, marketplace_url = ?, website_url = ?
       WHERE id = ?
     `;
     await pool.query(query, [
@@ -224,6 +227,7 @@ export async function updateUser(id, data) {
       data.city || 'São Paulo', data.state || 'SP',
       data.is_vetted !== undefined ? data.is_vetted : 1,
       data.marketplaceUrl || data.marketplace_url || '',
+      data.websiteUrl || data.website_url || '',
       id
     ]);
   } else {
@@ -236,7 +240,9 @@ export async function updateUser(id, data) {
         registration_type: data.registrationType || data.registration_type || memoryDB.users[index].registration_type || 'PF',
         pix_type: data.pixType || data.pix_type || memoryDB.users[index].pix_type || '',
         pix_key: data.pixKey || data.pix_key || memoryDB.users[index].pix_key || '',
-        is_vetted: data.is_vetted !== undefined ? data.is_vetted : memoryDB.users[index].is_vetted
+        is_vetted: data.is_vetted !== undefined ? data.is_vetted : memoryDB.users[index].is_vetted,
+        marketplace_url: data.marketplaceUrl || data.marketplace_url || memoryDB.users[index].marketplace_url || '',
+        website_url: data.websiteUrl || data.website_url || memoryDB.users[index].website_url || ''
       };
       saveMemoryDB();
     }

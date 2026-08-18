@@ -142,6 +142,12 @@ try {
         // Ignore errors
     }
 
+    try {
+        $pdo->exec("ALTER TABLE users ADD COLUMN website_url TEXT DEFAULT NULL");
+    } catch (Exception $e) {
+        // Ignore errors
+    }
+
     // Seed admin if missing
     $stmt = $pdo->prepare("SELECT id FROM users WHERE email = 'admin@gigbr.com.br'");
     $stmt->execute();
@@ -361,13 +367,14 @@ if ($resource === 'users') {
         $isVetted = $input['is_vetted'] ?? 1;
         $password = $input['password'] ?? '';
         $marketplaceUrl = $input['marketplace_url'] ?? ($input['marketplaceUrl'] ?? '');
+        $websiteUrl = $input['website_url'] ?? ($input['websiteUrl'] ?? '');
 
         if ($password) {
-            $stmt = $pdo->prepare("UPDATE users SET name=?, email=?, password=?, phone=?, role=?, omb=?, drt=?, bio=?, avatar=?, registration_type=?, cpf=?, cnpj=?, pix_type=?, pix_key=?, city=?, state=?, is_vetted=?, marketplace_url=? WHERE id=?");
-            $stmt->execute([$name, $email, $password, $phone, $role, $omb, $drt, $bio, $avatar, $regType, $cpf, $cnpj, $pixType, $pixKey, $city, $state, $isVetted, $marketplaceUrl, $id]);
+            $stmt = $pdo->prepare("UPDATE users SET name=?, email=?, password=?, phone=?, role=?, omb=?, drt=?, bio=?, avatar=?, registration_type=?, cpf=?, cnpj=?, pix_type=?, pix_key=?, city=?, state=?, is_vetted=?, marketplace_url=?, website_url=? WHERE id=?");
+            $stmt->execute([$name, $email, $password, $phone, $role, $omb, $drt, $bio, $avatar, $regType, $cpf, $cnpj, $pixType, $pixKey, $city, $state, $isVetted, $marketplaceUrl, $websiteUrl, $id]);
         } else {
-            $stmt = $pdo->prepare("UPDATE users SET name=?, email=?, phone=?, role=?, omb=?, drt=?, bio=?, avatar=?, registration_type=?, cpf=?, cnpj=?, pix_type=?, pix_key=?, city=?, state=?, is_vetted=?, marketplace_url=? WHERE id=?");
-            $stmt->execute([$name, $email, $phone, $role, $omb, $drt, $bio, $avatar, $regType, $cpf, $cnpj, $pixType, $pixKey, $city, $state, $isVetted, $marketplaceUrl, $id]);
+            $stmt = $pdo->prepare("UPDATE users SET name=?, email=?, phone=?, role=?, omb=?, drt=?, bio=?, avatar=?, registration_type=?, cpf=?, cnpj=?, pix_type=?, pix_key=?, city=?, state=?, is_vetted=?, marketplace_url=?, website_url=? WHERE id=?");
+            $stmt->execute([$name, $email, $phone, $role, $omb, $drt, $bio, $avatar, $regType, $cpf, $cnpj, $pixType, $pixKey, $city, $state, $isVetted, $marketplaceUrl, $websiteUrl, $id]);
         }
 
         $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");

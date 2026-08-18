@@ -964,6 +964,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
         const bio = form.elements.profileBio.value;
         const password = form.elements.profilePassword.value;
         const marketplaceUrl = form.elements.profileMarketplaceUrl ? form.elements.profileMarketplaceUrl.value : '';
+        const websiteUrl = form.elements.profileWebsiteUrl ? form.elements.profileWebsiteUrl.value : '';
         
         const updatedData = {
           name,
@@ -979,7 +980,8 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
           state,
           bio,
           avatar: currentUser?.avatar || '',
-          marketplace_url: marketplaceUrl
+          marketplace_url: marketplaceUrl,
+          website_url: websiteUrl
         };
 
         if (userRole === 'freelancer') {
@@ -1186,6 +1188,16 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
         </div>
 
         <div>
+          <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Site / Perfil Social / Link Externo</label>
+          <input 
+            type="url" name="profileWebsiteUrl" className="form-input" 
+            defaultValue={currentUser?.website_url || currentUser?.websiteUrl || ''} 
+            placeholder="Ex: https://instagram.com/seu_perfil ou seu site oficial"
+            style={{ backgroundColor: '#ffffff' }}
+          />
+        </div>
+
+        <div>
           <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Foto de Perfil (Avatar)</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <img src={currentUser?.avatar} alt="Avatar" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} />
@@ -1354,7 +1366,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
               🔧 Painel Admin
             </button>
           )}
-          {userRole === 'freelancer' && (
+          {(userRole === 'freelancer' || userRole === 'employer') && (
             <button 
               onClick={() => setDashboardTab('freelancer_dash')}
               className={`btn ${dashboardTab === 'freelancer_dash' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
@@ -1370,15 +1382,6 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
               style={{ border: '2px dashed #3b82f6', color: '#1d4ed8', backgroundColor: '#eff6ff' }}
             >
               🛒 Marketplace
-            </button>
-          )}
-          {currentUser && (
-            <button 
-              onClick={() => setDashboardTab('meu_perfil')}
-              className={`btn ${dashboardTab === 'meu_perfil' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
-              style={{ border: '2px dashed var(--color-green)' }}
-            >
-              👤 Meu Perfil
             </button>
           )}
         </div>
@@ -3106,31 +3109,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
         </div>
       )}
 
-      {/* 6. MEU PERFIL TAB */}
-      {dashboardTab === 'meu_perfil' && (
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <div className="glass-panel" style={{ maxWidth: '640px', width: '100%', padding: '30px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0 }}>
-                👤 Editar Meu Perfil Profissional
-              </h3>
-              <button 
-                onClick={() => {
-                  const shareUrl = `${window.location.origin}?talent=${currentUser?.id}`;
-                  navigator.clipboard.writeText(shareUrl);
-                  alert(`✓ Link de compartilhamento do seu card copiado:\n${shareUrl}`);
-                }}
-                className="btn btn-secondary btn-sm"
-                style={{ fontSize: '0.7rem' }}
-              >
-                🔗 Compartilhar Card
-              </button>
-            </div>
 
-            {renderProfileForm()}
-          </div>
-        </div>
-      )}
 
       {/* 5. CENTRAL ADMINISTRATOR DASHBOARD PANEL */}
       {dashboardTab === 'admin' && currentUser?.email !== 'admin@gigbr.com.br' && (
@@ -3667,30 +3646,6 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
         </div>
       )}
 
-      {/* 7. MEU PERFIL TAB */}
-      {dashboardTab === 'meu_perfil' && (
-        <div style={{ maxWidth: '700px', margin: '0 auto', width: '100%' }} className="glass-panel">
-          <div style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0 }}>
-                ⚙️ Minhas Informações Cadastrais
-              </h3>
-              <button 
-                onClick={() => {
-                  const shareUrl = `${window.location.origin}?talent=${currentUser?.id}`;
-                  navigator.clipboard.writeText(shareUrl);
-                  alert(`✓ Link de compartilhamento do seu card copiado para área de transferência:\n${shareUrl}`);
-                }}
-                className="btn btn-secondary btn-sm"
-                style={{ fontSize: '0.7rem' }}
-              >
-                🔗 Compartilhar Card
-              </button>
-            </div>
-            {renderProfileForm()}
-          </div>
-        </div>
-      )}
 
       {/* 8. MARKETPLACE & VENDAS TAB */}
       {dashboardTab === 'marketplace' && (currentUser?.cnpj || currentUser?.registrationType === 'PJ') && (
@@ -3753,8 +3708,8 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                 <div style={{ padding: '24px', backgroundColor: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', textAlign: 'center', color: '#64748b' }}>
                   <span style={{ fontSize: '2rem' }}>🔌</span>
                   <h5 style={{ fontSize: '0.9rem', fontWeight: 700, margin: '8px 0 4px 0' }}>Nenhum Catálogo Conectado</h5>
-                  <p style={{ fontSize: '0.75rem', maxWidth: '380px', margin: '0 auto 12px auto' }}>Vá em "Meu Perfil" e cadastre o link do seu Catálogo de Vendas ou link do MercadoLivre/Loja para integrar seus produtos.</p>
-                  <button onClick={() => setDashboardTab('meu_perfil')} className="btn btn-secondary btn-sm">Configurar Link</button>
+                  <p style={{ fontSize: '0.75rem', maxWidth: '380px', margin: '0 auto 12px auto' }}>Vá em "Meu Dashboard" e cadastre o link do seu Catálogo de Vendas ou link do MercadoLivre/Loja para integrar seus produtos.</p>
+                  <button onClick={() => setDashboardTab('freelancer_dash')} className="btn btn-secondary btn-sm">Configurar Link</button>
                 </div>
               )}
             </div>
@@ -4009,7 +3964,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
 
         {currentUser && (
           <button 
-            onClick={() => setDashboardTab('meu_perfil')}
+            onClick={() => setDashboardTab('freelancer_dash')}
             style={{
               background: 'none',
               border: 'none',
@@ -4018,13 +3973,13 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
               alignItems: 'center',
               fontSize: '0.65rem',
               fontWeight: 600,
-              color: dashboardTab === 'meu_perfil' ? 'var(--color-green)' : 'var(--text-secondary)',
+              color: dashboardTab === 'freelancer_dash' ? 'var(--color-green)' : 'var(--text-secondary)',
               cursor: 'pointer',
               gap: '4px'
             }}
           >
             <span style={{ fontSize: '1.2rem' }}>👤</span>
-            <span>Meu Perfil</span>
+            <span>Meu Dashboard</span>
           </button>
         )}
       </div>
@@ -4182,6 +4137,53 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                   value={editingUser.bio || ''}
                   onChange={(evt) => setEditingUser({ ...editingUser, bio: evt.target.value })}
                   style={{ fontSize: '0.8rem', resize: 'none' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Foto de Perfil (Avatar)</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {editingUser.avatar && (
+                    <img src={editingUser.avatar} alt="Preview" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
+                  )}
+                  <input 
+                    type="file" accept="image/*"
+                    onChange={(evt) => {
+                      const file = evt.target.files[0];
+                      if (file) {
+                        if (file.size > 2 * 1024 * 1024) {
+                          alert("A foto de perfil deve ter no máximo 2MB!");
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setEditingUser({ ...editingUser, avatar: reader.result });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    style={{ fontSize: '0.75rem', flex: 1 }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>URL do Marketplace</label>
+                <input 
+                  type="url" className="form-input"
+                  value={editingUser.marketplace_url || editingUser.marketplaceUrl || ''}
+                  onChange={(evt) => setEditingUser({ ...editingUser, marketplace_url: evt.target.value })}
+                  placeholder="Link do catálogo de vendas externo"
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Site / Perfil Social / Link Externo</label>
+                <input 
+                  type="url" className="form-input"
+                  value={editingUser.website_url || editingUser.websiteUrl || ''}
+                  onChange={(evt) => setEditingUser({ ...editingUser, website_url: evt.target.value })}
+                  placeholder="https://instagram.com/perfil ou site oficial"
                 />
               </div>
 

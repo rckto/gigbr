@@ -707,16 +707,48 @@ export const AppProvider = ({ children }) => {
 
   async function updateUserAdmin(id, data) {
     try {
-      await fetch(`${apiOrigin}/api/users/${id}`, {
+      const res = await fetch(`${apiOrigin}/api/users/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
+      if (res.ok) {
+        const updatedUser = await res.json();
+        const finalUser = { ...data, ...updatedUser };
+        
+        setContractors(prev => {
+          const exists = prev.some(c => c.id === id);
+          if (finalUser.role === 'freelancer') {
+            if (exists) {
+              return prev.map(c => c.id === id ? finalUser : c);
+            } else {
+              return [...prev, finalUser];
+            }
+          } else {
+            return prev.filter(c => c.id !== id);
+          }
+        });
+
+        setEmployers(prev => {
+          const exists = prev.some(e => e.id === id);
+          if (finalUser.role === 'employer' || finalUser.role === 'admin') {
+            if (exists) {
+              return prev.map(e => e.id === id ? finalUser : e);
+            } else {
+              return [...prev, finalUser];
+            }
+          } else {
+            return prev.filter(e => e.id !== id);
+          }
+        });
+      } else {
+        throw new Error("HTTP error " + res.status);
+      }
     } catch (err) {
-      console.warn("API offline. Updating user in local memory.");
+      console.warn("API offline or error. Updating user in local memory.", err);
+      setContractors(prev => prev.map(c => c.id === id ? { ...c, ...data } : c));
+      setEmployers(prev => prev.map(e => e.id === id ? { ...e, ...data } : e));
     }
-    setContractors(prev => prev.map(c => c.id === id ? { ...c, ...data } : c));
-    setEmployers(prev => prev.map(e => e.id === id ? { ...e, ...data } : e));
     addNotification('system', `Usuário "${data.name}" atualizado pelo administrador central.`, 'all');
   }
 
