@@ -985,7 +985,8 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
           pixKey,
           city,
           state,
-          bio
+          bio,
+          avatar: currentUser?.avatar || ''
         };
 
         if (userRole === 'freelancer') {
@@ -1403,6 +1404,20 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
             className="btn btn-secondary btn-sm"
           >
             {language === 'pt-BR' ? 'EN' : 'PT'}
+          </button>
+
+          <button 
+            onClick={() => setCurrentUser(null)} 
+            className="btn btn-secondary btn-sm"
+            style={{ 
+              backgroundColor: '#fee2e2', 
+              color: '#991b1b', 
+              borderColor: '#fca5a5', 
+              fontWeight: 700 
+            }}
+            title="Sair do sistema"
+          >
+            🚪 Sair
           </button>
 
           {/* Ocultado como solicitado: Exibir celular */}

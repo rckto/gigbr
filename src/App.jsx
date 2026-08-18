@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { AppProvider } from './context/AppContext';
+import React, { useState, useEffect, useContext } from 'react';
+import { AppProvider, AppContext } from './context/AppContext';
 import InviteAuth from './components/InviteAuth';
 import DesktopDashboard from './components/DesktopDashboard';
 import PixModal from './components/PixModal';
@@ -7,10 +7,56 @@ import PublicProfile from './components/PublicProfile';
 import dashboardBg from './assets/dashboard_bg.jpg';
 
 function MainAppContent() {
+  const { currentUser, setCurrentUser } = useContext(AppContext);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
   const [shareMode, setShareMode] = useState(null); // 'talent' or 'group'
   const [shareId, setShareId] = useState(null);
+
+  // Sync authentication state with currentUser
+  useEffect(() => {
+    if (currentUser) {
+      setIsAuthenticated(true);
+    } else {
+      setIsAuthenticated(false);
+    }
+  }, [currentUser]);
+
+  // Inactivity automatic logout (30 minutes)
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser) return;
+
+    let inactivityTimeout;
+    const INACTIVITY_TIME = 30 * 60 * 1000; // 30 minutes
+
+    const resetTimer = () => {
+      if (inactivityTimeout) clearTimeout(inactivityTimeout);
+      inactivityTimeout = setTimeout(() => {
+        console.log("Session expired due to inactivity.");
+        alert("Sua sessão expirou por inatividade. Faça o login novamente.");
+        setCurrentUser(null);
+      }, INACTIVITY_TIME);
+    };
+
+    // Events to track user activity
+    const activityEvents = ['mousemove', 'keydown', 'mousedown', 'click', 'scroll', 'touchstart'];
+    
+    // Register event listeners
+    activityEvents.forEach(event => {
+      window.addEventListener(event, resetTimer);
+    });
+
+    // Initialize timer
+    resetTimer();
+
+    // Cleanup listeners and timer
+    return () => {
+      if (inactivityTimeout) clearTimeout(inactivityTimeout);
+      activityEvents.forEach(event => {
+        window.removeEventListener(event, resetTimer);
+      });
+    };
+  }, [isAuthenticated, currentUser, setCurrentUser]);
 
   // Responsive screen size listener and URL param routing
   useEffect(() => {
