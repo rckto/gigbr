@@ -692,27 +692,32 @@ if ($resource === 'emails' && $id === 'send' && $request_method === 'POST') {
     $subject = $input['subject'] ?? 'Sem Assunto';
     $body = $input['body'] ?? '(Sem Conteúdo)';
 
+    $fullSubject = "[GIG BR]  " . $subject;
+
     // Log the email to file
     $logEntry = "\n==================================================\n" .
                 "DATA/HORA: " . date('d/m/Y H:i:s') . "\n" .
                 "REMETENTE: " . $sender . "\n" .
                 "DESTINATÁRIO: " . $recipient . "\n" .
-                "ASSUNTO: " . $subject . "\n" .
+                "ASSUNTO: " . $fullSubject . "\n" .
                 "MENSAGEM:\n" . $body . "\n" .
                 "==================================================\n";
     
     file_put_contents(__DIR__ . '/../emails_sent.log', $logEntry, FILE_APPEND);
     
-    // Also try to send via PHP mail()
-    $headers = "From: GIG BR <$sender>\r\n" .
-               "Reply-To: $sender\r\n" .
+    // OpenSource reliable local-relay email sending:
+    // Send from no-reply@phpstack-897068-6608878.cloudwaysapps.com to guarantee SPF validity on Cloudways,
+    // but direct the reply to the sender's actual email address.
+    $fromMail = "no-reply@phpstack-897068-6608878.cloudwaysapps.com";
+    $headers = "From: GIG BR <" . $fromMail . ">\r\n" .
+               "Reply-To: " . $sender . "\r\n" .
+               "MIME-Version: 1.0\r\n" .
+               "Content-Type: text/plain; charset=utf-8\r\n" .
                "X-Mailer: PHP/" . phpversion();
-    @mail($recipient, $subject, $body, $headers);
+    
+    $mail_success = @mail($recipient, "=?UTF-8?B?" . base64_encode($fullSubject) . "?=", $body, $headers);
 
-    // Try real Gmail SMTP dispatch
-    $smtp_success = send_smtp_email($recipient, $subject, $body, "GIG BR - " . $sender);
-
-    echo json_encode(["success" => true, "message" => "Email logged and processed.", "smtp_sent" => $smtp_success]);
+    echo json_encode(["success" => $mail_success, "message" => "Email processed.", "method" => "Local Relay Sendmail"]);
     exit;
 }
 

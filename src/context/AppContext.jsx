@@ -16,7 +16,14 @@ const apiOrigin = getApiOrigin();
 export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  const [language, setLanguage] = useState('pt-BR'); // 'pt-BR' or 'en'
+  const [language, setLanguage] = useState(() => {
+    try {
+      const browserLang = (navigator.language || navigator.userLanguage || '').toLowerCase();
+      if (browserLang.startsWith('es')) return 'es';
+      if (browserLang.startsWith('en')) return 'en';
+    } catch (e) {}
+    return 'pt-BR';
+  });
   const [events, setEvents] = useState(mockEvents);
   
   // Extend mock contractors with default bios and credentials
@@ -273,7 +280,11 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   function toggleLanguage() {
-    setLanguage(prev => prev === 'pt-BR' ? 'en' : 'pt-BR');
+    setLanguage(prev => {
+      if (prev === 'pt-BR') return 'en';
+      if (prev === 'en') return 'es';
+      return 'pt-BR';
+    });
   }
 
   function addNotification(sender, message, audience = 'all', eventId = null) {
@@ -1209,6 +1220,73 @@ export const AppProvider = ({ children }) => {
       gpsRegion: 'Region:',
       filterProximity: 'Show nearby gigs only',
       mockGpsBtn: 'Change State'
+    },
+    es: {
+      appName: 'GoIA Gig BR',
+      langLabel: 'ES',
+      partnerLabel: 'Plataforma de Acreditación Artística y Técnica',
+      inviteOnly: 'Acceso Restringido',
+      enterInviteCode: 'Código de Acceso del Productor',
+      invalidInviteCode: 'Código de invitación inválido.',
+      loginButton: 'Acceder al Panel',
+      dashboardTitle: 'Gestión General de Gigs',
+      budgetStatus: 'Presupuesto del Evento',
+      vettedContractors: 'Profesionales Homologados',
+      shiftsVerif: 'Escala y Liberación Financiera',
+      contractorName: 'Nombre del Profesional',
+      category: 'Categoría',
+      meiStatus: 'Tributario MEI',
+      status: 'Estado',
+      actions: 'Acciones',
+      paid: 'Liquidado con PIX',
+      disputed: 'Divergencia',
+      completed: 'Pago Pendiente',
+      activeOnsite: 'Trabajando',
+      scheduled: 'Programado',
+      payPix: 'Pagar con PIX',
+      adjustHours: 'Ajustar Horas',
+      approvedHours: 'Aprobar',
+      allEvents: 'Todos los Eventos',
+      budgetUsage: 'Gasto Realizado',
+      budgetCap: 'Tope de Presupuesto',
+      warningClose: 'Atención: ¡Límite de presupuesto cercano!',
+      filterAll: 'Todas las Categorías',
+      vettedLabel: 'Homologado',
+      unvettedLabel: 'Pendiente',
+      contractorApp: 'GoIA Gig Proveedor',
+      activeShift: 'Escala del Día',
+      checkInBtn: 'Check-in (GPS Local)',
+      checkOutBtn: 'Finalizar Gig',
+      walletTitle: 'Cartera de Pagos',
+      balance: 'Saldo Disponible',
+      paidShifts: 'Gigs Liquidadas',
+      submitInvoice: 'Emitir Factura/Recibo',
+      verifyLocation: 'Validando GPS en el lugar...',
+      raiseDispute: 'Disputar Horas',
+      sendDispute: 'Enviar Disputa',
+      disputeNotesPlaceholder: 'Describa la divergencia de horas...',
+      confirmCheckin: 'Confirmar Entrada',
+      workingNow: 'Activo en la Gig',
+      realtimeSync: 'Registro de Sincronización GPS/PIX',
+      webAction: 'Acción del Gestor',
+      mobileAction: 'Acción del Celular',
+      pixModalTitle: 'Liquidación de Caché con PIX',
+      pixDesc: 'Escanee el código QR o use la clave PIX copiar y pegar para realizar la transferencia directa a la cuenta del proveedor.',
+      pixKeyCopy: 'Copiar Clave PIX',
+      pixCopied: '¡Copiado!',
+      pixConfirmBtn: 'Confirmar Éxito Bancario',
+      pixStatusPaid: '¡Procesado D+0!',
+      pixReceipt: 'Recibo de Liquidación PIX',
+      receiptDate: 'Fecha/Hora:',
+      receiptId: 'Código E-ID:',
+      receiptContractor: 'Beneficiario:',
+      receiptCnpj: 'Identificación Fiscal MEI:',
+      receiptAmount: 'Valor Neto:',
+      close: 'Cerrar',
+      socialLogin: 'O inicie sesión con cuentas sociales',
+      gpsRegion: 'Región de Actuación:',
+      filterProximity: 'Mostrar Gigs en mi región',
+      mockGpsBtn: 'Cambiar Estado'
     }
   };
 
@@ -1268,7 +1346,8 @@ export const AppProvider = ({ children }) => {
         deleteOpportunityAdmin,
         updateOpportunityAdmin,
         sendEmailProposal,
-        t: t[language]
+        setLanguage,
+        t: t[language] || t['pt-BR']
       }}
     >
       {children}

@@ -48,7 +48,7 @@ const GoogleAdSlot = ({ slotId = 'default-slot', height = '90px' }) => {
 };
 
 const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
-  const { t, language, toggleLanguage, validAccessCodes, setCurrentUser, setUserRole, refreshAllData, registerFreelancer, registerEmployer } = useContext(AppContext);
+  const { t, language, toggleLanguage, setLanguage, validAccessCodes, setCurrentUser, setUserRole, refreshAllData, registerFreelancer, registerEmployer } = useContext(AppContext);
   
   // Tab/Mode management: true for Register mode, false for Login mode
   const [isRegistering, setIsRegistering] = useState(false);
@@ -522,6 +522,49 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
         }}>
           GIG BR
         </h1>
+
+        {/* Multilingual Selector Buttons */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '24px' }}>
+          <button 
+            onClick={() => setLanguage('pt-BR')} 
+            className="btn btn-secondary btn-sm"
+            style={{
+              padding: '4px 8px',
+              fontSize: '0.75rem',
+              backgroundColor: language === 'pt-BR' ? 'var(--color-green-light)' : '#f4f4f5',
+              borderColor: language === 'pt-BR' ? 'var(--color-green)' : '#cbd5e1',
+              fontWeight: language === 'pt-BR' ? 'bold' : 'normal'
+            }}
+          >
+            🇧🇷 PT
+          </button>
+          <button 
+            onClick={() => setLanguage('es')} 
+            className="btn btn-secondary btn-sm"
+            style={{
+              padding: '4px 8px',
+              fontSize: '0.75rem',
+              backgroundColor: language === 'es' ? 'var(--color-green-light)' : '#f4f4f5',
+              borderColor: language === 'es' ? 'var(--color-green)' : '#cbd5e1',
+              fontWeight: language === 'es' ? 'bold' : 'normal'
+            }}
+          >
+            🇪🇸 ES
+          </button>
+          <button 
+            onClick={() => setLanguage('en')} 
+            className="btn btn-secondary btn-sm"
+            style={{
+              padding: '4px 8px',
+              fontSize: '0.75rem',
+              backgroundColor: language === 'en' ? 'var(--color-green-light)' : '#f4f4f5',
+              borderColor: language === 'en' ? 'var(--color-green)' : '#cbd5e1',
+              fontWeight: language === 'en' ? 'bold' : 'normal'
+            }}
+          >
+            🇺🇸 EN
+          </button>
+        </div>
 
         {!isRegistering ? (
           /* ================= LOGIN MODE ================= */

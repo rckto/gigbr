@@ -292,16 +292,33 @@ Mensagem:
             <img 
               src={profile.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face'} 
               alt={profile.name} 
-              style={{ width: '120px', height: '120px', borderRadius: '50%', border: '4px solid #10b981', objectFit: 'cover', marginBottom: '20px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+              onClick={() => {
+                const url = profile.website_url || profile.websiteUrl;
+                if (url) window.open(url.startsWith('http') ? url : `https://${url}`, '_blank');
+              }}
+              style={{ width: '120px', height: '120px', borderRadius: '50%', border: '4px solid #10b981', objectFit: 'cover', marginBottom: '20px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', cursor: (profile.website_url || profile.websiteUrl) ? 'pointer' : 'default' }}
+              title={(profile.website_url || profile.websiteUrl) ? `Acesse: ${profile.website_url || profile.websiteUrl}` : undefined}
             />
           ) : profile.avatar ? (
             <img 
               src={profile.avatar} 
               alt={profile.name} 
-              style={{ width: '120px', height: '120px', borderRadius: '50%', border: '4px solid #0284c7', objectFit: 'cover', marginBottom: '20px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+              onClick={() => {
+                const url = profile.website_url || profile.websiteUrl;
+                if (url) window.open(url.startsWith('http') ? url : `https://${url}`, '_blank');
+              }}
+              style={{ width: '120px', height: '120px', borderRadius: '50%', border: '4px solid #0284c7', objectFit: 'cover', marginBottom: '20px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', cursor: (profile.website_url || profile.websiteUrl) ? 'pointer' : 'default' }}
+              title={(profile.website_url || profile.websiteUrl) ? `Acesse: ${profile.website_url || profile.websiteUrl}` : undefined}
             />
           ) : (
-            <div style={{ width: '120px', height: '120px', borderRadius: '50%', backgroundColor: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', color: '#ffffff', marginBottom: '20px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+            <div 
+              onClick={() => {
+                const url = profile.website_url || profile.websiteUrl;
+                if (url) window.open(url.startsWith('http') ? url : `https://${url}`, '_blank');
+              }}
+              style={{ width: '120px', height: '120px', borderRadius: '50%', backgroundColor: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', color: '#ffffff', marginBottom: '20px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', cursor: (profile.website_url || profile.websiteUrl) ? 'pointer' : 'default' }}
+              title={(profile.website_url || profile.websiteUrl) ? `Acesse: ${profile.website_url || profile.websiteUrl}` : undefined}
+            >
               👥
             </div>
           )}

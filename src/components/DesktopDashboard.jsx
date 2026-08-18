@@ -115,7 +115,22 @@ const TalentCard = ({ contractor, t, onPreHire, onPropose }) => {
             <img 
               src={contractor.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face'} 
               alt={contractor.name} 
-              style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--color-green)' }}
+              onClick={(e) => {
+                const url = contractor.website_url || contractor.websiteUrl;
+                if (url) {
+                  e.stopPropagation();
+                  window.open(url.startsWith('http') ? url : `https://${url}`, '_blank');
+                }
+              }}
+              style={{ 
+                width: '48px', 
+                height: '48px', 
+                borderRadius: '50%', 
+                objectFit: 'cover', 
+                border: '2px solid var(--color-green)',
+                cursor: (contractor.website_url || contractor.websiteUrl) ? 'pointer' : 'default'
+              }}
+              title={(contractor.website_url || contractor.websiteUrl) ? `Acesse: ${contractor.website_url || contractor.websiteUrl}` : undefined}
             />
             <div style={{ textAlign: 'left' }}>
               <h4 style={{ fontSize: '0.9rem', fontWeight: 800 }}>{contractor.name}</h4>
@@ -235,20 +250,54 @@ const EmployerCard = ({ employer, t }) => {
         {/* Front of Card */}
         <div className="flip-card-front">
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', width: '100%' }}>
-            <div style={{ 
-              width: '44px', 
-              height: '44px', 
-              borderRadius: '50%', 
-              backgroundColor: 'var(--color-blue-light)', 
-              color: 'var(--color-blue)',
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              fontSize: '1.1rem',
-              fontWeight: 800
-            }}>
-              🏢
-            </div>
+            {employer.avatar ? (
+              <img 
+                src={employer.avatar} 
+                alt={employer.name} 
+                onClick={(e) => {
+                  const url = employer.website_url || employer.websiteUrl;
+                  if (url) {
+                    e.stopPropagation();
+                    window.open(url.startsWith('http') ? url : `https://${url}`, '_blank');
+                  }
+                }}
+                style={{ 
+                  width: '44px', 
+                  height: '44px', 
+                  borderRadius: '50%', 
+                  objectFit: 'cover', 
+                  border: '2px solid var(--color-blue)',
+                  cursor: (employer.website_url || employer.websiteUrl) ? 'pointer' : 'default'
+                }}
+                title={(employer.website_url || employer.websiteUrl) ? `Acesse: ${employer.website_url || employer.websiteUrl}` : undefined}
+              />
+            ) : (
+              <div 
+                onClick={(e) => {
+                  const url = employer.website_url || employer.websiteUrl;
+                  if (url) {
+                    e.stopPropagation();
+                    window.open(url.startsWith('http') ? url : `https://${url}`, '_blank');
+                  }
+                }}
+                style={{ 
+                  width: '44px', 
+                  height: '44px', 
+                  borderRadius: '50%', 
+                  backgroundColor: 'var(--color-blue-light)', 
+                  color: 'var(--color-blue)',
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  fontSize: '1.1rem',
+                  fontWeight: 800,
+                  cursor: (employer.website_url || employer.websiteUrl) ? 'pointer' : 'default'
+                }}
+                title={(employer.website_url || employer.websiteUrl) ? `Acesse: ${employer.website_url || employer.websiteUrl}` : undefined}
+              >
+                🏢
+              </div>
+            )}
             <div style={{ textAlign: 'left' }}>
               <h4 style={{ fontSize: '0.9rem', fontWeight: 800 }}>{employer.companyName}</h4>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Produtor: {employer.name}</p>
@@ -327,6 +376,7 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
     t,
     language,
     toggleLanguage,
+    setLanguage,
     events,
     contractors,
     shifts,
@@ -1421,12 +1471,47 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
             <span>Região</span>
           </label>
 
-          <button 
-            onClick={toggleLanguage} 
-            className="btn btn-secondary btn-sm"
-          >
-            {language === 'pt-BR' ? 'EN' : 'PT'}
-          </button>
+          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+            <button 
+              onClick={() => setLanguage('pt-BR')} 
+              className="btn btn-secondary btn-sm"
+              style={{
+                padding: '4px 6px',
+                fontSize: '0.7rem',
+                backgroundColor: language === 'pt-BR' ? 'var(--color-green-light)' : 'transparent',
+                borderColor: language === 'pt-BR' ? 'var(--color-green)' : '#cbd5e1',
+                fontWeight: language === 'pt-BR' ? 'bold' : 'normal'
+              }}
+            >
+              🇧🇷 PT
+            </button>
+            <button 
+              onClick={() => setLanguage('es')} 
+              className="btn btn-secondary btn-sm"
+              style={{
+                padding: '4px 6px',
+                fontSize: '0.7rem',
+                backgroundColor: language === 'es' ? 'var(--color-green-light)' : 'transparent',
+                borderColor: language === 'es' ? 'var(--color-green)' : '#cbd5e1',
+                fontWeight: language === 'es' ? 'bold' : 'normal'
+              }}
+            >
+              🇪🇸 ES
+            </button>
+            <button 
+              onClick={() => setLanguage('en')} 
+              className="btn btn-secondary btn-sm"
+              style={{
+                padding: '4px 6px',
+                fontSize: '0.7rem',
+                backgroundColor: language === 'en' ? 'var(--color-green-light)' : 'transparent',
+                borderColor: language === 'en' ? 'var(--color-green)' : '#cbd5e1',
+                fontWeight: language === 'en' ? 'bold' : 'normal'
+              }}
+            >
+              🇺🇸 EN
+            </button>
+          </div>
 
           <button 
             onClick={() => setCurrentUser(null)} 

@@ -552,4 +552,51 @@ body {
   }
 }
 
+/* Mobile performance, text rendering, and safety margins */
+@media (max-width: 480px) {
+  body {
+    font-size: 14px;
+  }
+  .responsive-layout {
+    padding: 12px !important;
+    gap: 12px !important;
+  }
+  /* Force single column for all form layouts and custom responsive columns */
+  .grid-2col, .grid-3col {
+    grid-template-columns: 1fr !important;
+  }
+  /* Prevent word break issue in headings */
+  h1, h2, h3, h4 {
+    word-break: break-word;
+    hyphens: auto;
+  }
+  /* Allow scroll for tables but keep layout intact */
+  .data-table-container {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Cross-browser input resets for Safari iOS */
+input, textarea, select, button {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+input[type="checkbox"] {
+  -webkit-appearance: checkbox;
+  -moz-appearance: checkbox;
+  appearance: checkbox;
+}
+input[type="radio"] {
+  -webkit-appearance: radio;
+  -moz-appearance: radio;
+  appearance: radio;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
 
