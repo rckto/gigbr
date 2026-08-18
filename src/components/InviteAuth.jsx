@@ -888,7 +888,7 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
 
               {regForm.role === 'freelancer' && (
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Categoria Profissional</label>
+                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Ocupação</label>
                   <select 
                     className="form-input"
                     value={regForm.category}

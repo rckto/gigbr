@@ -310,12 +310,12 @@ Mensagem:
 
           <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 4px 0' }}>{profile.name}</h2>
           <p style={{ fontSize: '0.9rem', color: '#475569', fontWeight: 600, margin: '0 0 16px 0' }}>
-            {isTalent ? profile.role : `Grupo / Equipe • ${profile.category}`}
+            {isTalent ? (profile.category || 'Prestador') : `Grupo / Equipe • ${profile.category}`}
           </p>
 
           <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
             <span style={{ backgroundColor: '#e2f0fd', color: '#0284c7', fontSize: '0.75rem', fontWeight: 700, padding: '4px 10px', borderRadius: '100px' }}>
-              📍 {profile.city} - {profile.state}
+              📍 Cidade onde vive: {profile.city} - {profile.state}
             </span>
             <span style={{ backgroundColor: '#ecfdf5', color: '#047857', fontSize: '0.75rem', fontWeight: 700, padding: '4px 10px', borderRadius: '100px' }}>
               ⭐ {profile.rating || '5.0'}

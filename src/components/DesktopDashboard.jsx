@@ -1856,10 +1856,10 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
       {dashboardTab === 'cadastro' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: userRole === 'freelancer' ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', maxWidth: userRole === 'freelancer' ? '600px' : 'none', width: '100%', margin: userRole === 'freelancer' ? '0 auto' : '0' }}>
             
             {/* Freelancer Form (Supports PF/PJ & OMB/DRT credentials & Bio & full states list) */}
-            <div className="glass-panel" style={{ padding: '24px' }}>
+            <div className="glass-panel" style={{ padding: '24px', display: userRole === 'freelancer' ? 'none' : 'block' }}>
               <div style={{ marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 900, textTransform: 'uppercase' }}>Ficha do Profissional</h3>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Cadastre seu perfil de prestação autônomo ou MEI.</p>
@@ -2141,7 +2141,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
             </div>
 
             {/* Employer Form with Hiring preference policy and Bio */}
-            <div className="glass-panel" style={{ padding: '24px' }}>
+            <div className="glass-panel" style={{ padding: '24px', display: userRole === 'freelancer' ? 'none' : 'block' }}>
               <div style={{ marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 900, textTransform: 'uppercase' }}>Cadastro de Contratante</h3>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Cadastre sua produtora para gerenciar escalas de gigs.</p>

@@ -599,10 +599,12 @@ export const AppProvider = ({ children }) => {
 
   async function updateContractor(id, newData) {
     try {
+      const current = contractors.find(c => c.id === id) || (currentUser && currentUser.id === id ? currentUser : {});
+      const mergedData = { ...current, ...newData };
       await fetch(`${apiOrigin}/api/users/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newData)
+        body: JSON.stringify(mergedData)
       });
     } catch (err) {
       console.warn("API offline. Updating contractor in local state.");
@@ -618,10 +620,12 @@ export const AppProvider = ({ children }) => {
 
   async function updateEmployer(id, newData) {
     try {
+      const current = employers.find(e => e.id === id) || (currentUser && currentUser.id === id ? currentUser : {});
+      const mergedData = { ...current, ...newData, role: 'employer' };
       await fetch(`${apiOrigin}/api/users/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...newData, role: 'employer' })
+        body: JSON.stringify(mergedData)
       });
     } catch (err) {
       console.warn("API offline. Updating employer in local state.");
