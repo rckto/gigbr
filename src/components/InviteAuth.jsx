@@ -57,11 +57,9 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
   const [authMode, setAuthMode] = useState('employer'); // 'employer' or 'freelancer'
   const [inviteCode, setInviteCode] = useState('');
   const [email, setEmail] = useState('');
-  const [cpfOrCnpj, setCpfOrCnpj] = useState('');
   const [password, setPassword] = useState('');
-  const [mathAnswer, setMathAnswer] = useState('');
-  const [antiSpamTicked, setAntiSpamTicked] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Register Form States
   const [regForm, setRegForm] = useState({
@@ -83,8 +81,13 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
     drt: '',
     bio: ''
   });
-  const [recaptchaState, setRecaptchaState] = useState('idle');
-  const [regAntiSpam, setRegAntiSpam] = useState(false);
+  const [showRegPassword, setShowRegPassword] = useState(false);
+
+  // Anti-Spam Captcha States (Isolated)
+  const [loginCaptchaVerified, setLoginCaptchaVerified] = useState(false);
+  const [loginCaptchaLoading, setLoginCaptchaLoading] = useState(false);
+  const [registerCaptchaVerified, setRegisterCaptchaVerified] = useState(false);
+  const [registerCaptchaLoading, setRegisterCaptchaLoading] = useState(false);
 
   const triggerSuccess = () => {
     if (onLoginSuccess) {
@@ -267,9 +270,9 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
     e.preventDefault();
     setError('');
 
-    // reCAPTCHA verification is universal for both login modes
-    if (recaptchaState !== 'verified' || !antiSpamTicked) {
-      setError('Por favor, confirme que você não é um robô no Google reCAPTCHA.');
+    // Isolated anti-spam verification
+    if (!loginCaptchaVerified) {
+      setError('Por favor, confirme que você não é um robô no desafio anti-spam.');
       return;
     }
 
@@ -282,12 +285,13 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
       }
       payload.inviteCode = formattedCode;
     } else {
-      if (!email || !cpfOrCnpj) {
-        setError('Preencha seu e-mail e CPF/CNPJ.');
+      if (!email || !password) {
+        setError('Preencha seu e-mail e senha de acesso (ou CPF/CNPJ).');
         return;
       }
       payload.email = email.trim().toLowerCase();
-      payload.cpfOrCnpj = cpfOrCnpj.trim();
+      payload.password = password.trim();
+      payload.cpfOrCnpj = password.trim();
     }
 
     try {
@@ -335,15 +339,17 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
           setError('Modo Offline: código inválido ou offline. Use ADMIN2027, BRASIL2027 ou OP-XXXX.');
         }
       } else {
-        // Safe offline check for credentials
+        // Safe offline check for credentials (check plain password or Clean CPF/CNPJ)
         const localUsers = JSON.parse(localStorage.getItem('gigbr_users') || '[]');
         const targetEmail = email.trim().toLowerCase();
-        const cleanInputDoc = cpfOrCnpj.replace(/[^\d]/g, '');
+        const cleanInputDoc = password.trim().replace(/[^\d]/g, '');
+        const plainInputPassword = password.trim();
         
         const found = localUsers.find(u => {
           const emailMatch = u.email && u.email.toLowerCase() === targetEmail;
           const cleanUserDoc = (u.cpf || u.cnpj || '').replace(/[^\d]/g, '');
-          return emailMatch && cleanUserDoc === cleanInputDoc;
+          const passMatch = u.password === plainInputPassword || cleanUserDoc === cleanInputDoc;
+          return emailMatch && passMatch;
         });
 
         if (found) {
@@ -372,8 +378,9 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
     e.preventDefault();
     setError('');
 
-    if (recaptchaState !== 'verified' || !regAntiSpam) {
-      setError('Por favor, confirme que você não é um robô no Google reCAPTCHA.');
+    // Isolated anti-spam verification
+    if (!registerCaptchaVerified) {
+      setError('Por favor, confirme que você não é um robô no desafio anti-spam.');
       return;
     }
 
@@ -443,7 +450,6 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
       setIsRegistering(false);
       setEmail(regForm.email);
       setPassword(regForm.password);
-      setCpfOrCnpj(document);
       setAuthMode('employer');
       setRegForm({
         role: 'freelancer',
@@ -463,8 +469,8 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
         drt: '',
         bio: ''
       });
-      setRecaptchaState('idle');
-      setRegAntiSpam(false);
+      setRegisterCaptchaVerified(false);
+      setLoginCaptchaVerified(false);
     } catch (err) {
       setError(err.message || 'Erro ao registrar usuário.');
     }
@@ -592,13 +598,37 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Senha de Acesso</label>
-                    <input 
-                      type="password" className="form-input" placeholder="Sua senha ou CPF/CNPJ se primeiro acesso" required
-                      value={password}
-                      onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                      style={{ backgroundColor: '#ffffff' }}
-                    />
+                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Senha ou CPF/CNPJ de Acesso</label>
+                    <div style={{ position: 'relative' }}>
+                      <input 
+                        type={showPassword ? "text" : "password"} 
+                        className="form-input" 
+                        placeholder="Sua senha ou CPF/CNPJ de cadastro" 
+                        required
+                        value={password}
+                        onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                        style={{ backgroundColor: '#ffffff', paddingRight: '70px' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '10px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          color: 'var(--color-blue)',
+                          textTransform: 'uppercase'
+                        }}
+                      >
+                        {showPassword ? 'Ocultar' : 'Mostrar'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -620,20 +650,20 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div 
                     onClick={() => {
-                      if (recaptchaState === 'verified') return;
-                      setRecaptchaState('loading');
+                      if (loginCaptchaVerified) return;
+                      setLoginCaptchaLoading(true);
                       setTimeout(() => {
-                        setRecaptchaState('verified');
-                        setAntiSpamTicked(true);
+                        setLoginCaptchaLoading(false);
+                        setLoginCaptchaVerified(true);
                         setError('');
                       }, 1000);
                     }}
                     style={{
                       width: '24px',
                       height: '24px',
-                      border: recaptchaState === 'verified' ? 'none' : '2px solid #c1c1c1',
+                      border: loginCaptchaVerified ? 'none' : '2px solid #c1c1c1',
                       borderRadius: '2px',
-                      cursor: recaptchaState === 'verified' ? 'default' : 'pointer',
+                      cursor: loginCaptchaVerified ? 'default' : 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -642,8 +672,8 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
                     }}
                     title="Verificar"
                   >
-                    {recaptchaState === 'idle' && null}
-                    {recaptchaState === 'loading' && (
+                    {!loginCaptchaVerified && !loginCaptchaLoading && null}
+                    {loginCaptchaLoading && (
                       <div className="recaptcha-spinner" style={{
                         width: '14px',
                         height: '14px',
@@ -653,7 +683,7 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
                         animation: 'spin 0.6s linear infinite'
                       }} />
                     )}
-                    {recaptchaState === 'verified' && (
+                    {loginCaptchaVerified && (
                       <span style={{ fontSize: '1.2rem', color: '#009a29', fontWeight: 'bold' }}>✓</span>
                     )}
                   </div>
@@ -694,42 +724,7 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
               </button>
             </div>
 
-            {/* Modern Social Logins Layout */}
-            <div style={{ marginTop: '24px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
-                Ou acesse com suas redes sociais:
-              </p>
 
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-                {/* Google */}
-                <button 
-                  type="button"
-                  onClick={() => handleSocialLogin('google')}
-                  className="btn btn-secondary" 
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: 'var(--radius-sm)', backgroundColor: '#ffffff', border: '1px solid var(--border-color)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
-                  title="Conectar com o Google"
-                >
-                  <svg style={{ width: '16px', height: '16px' }} viewBox="0 0 24 24">
-                    <path fill="#ea4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114A5.99 5.99 0 0 1 8 12.5a5.99 5.99 0 0 1 5.99-6c1.61 0 3.09.64 4.18 1.68l3.06-3.06C19.39 3.32 16.89 2 13.99 2 8.16 2 3.44 6.7 3.44 12.5S8.16 23 13.99 23c5.3 0 9.77-3.8 9.77-9.5 0-.6-.05-1.18-.15-1.74l-11.37-.475Z"/>
-                  </svg>
-                  <span>Google</span>
-                </button>
-
-                {/* Apple */}
-                <button 
-                  type="button"
-                  onClick={() => handleSocialLogin('apple')}
-                  className="btn btn-secondary" 
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: 'var(--radius-sm)', backgroundColor: '#ffffff', border: '1px solid var(--border-color)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
-                  title="Conectar com a Apple"
-                >
-                  <svg style={{ width: '16px', height: '16px' }} viewBox="0 0 24 24">
-                    <path fill="#000000" d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-1 .04-2.22.67-2.94 1.5-.64.73-1.2 1.87-1.05 2.98 1.12.09 2.27-.58 3-1.42Z"/>
-                  </svg>
-                  <span>Apple</span>
-                </button>
-              </div>
-            </div>
           </>
         ) : (
           /* ================= REGISTER MODE ================= */
@@ -794,12 +789,37 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Senha de Acesso</label>
-                <input 
-                  type="password" className="form-input" required placeholder="Mínimo 6 caracteres" minLength="6"
-                  value={regForm.password}
-                  onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
-                  style={{ backgroundColor: '#ffffff' }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showRegPassword ? "text" : "password"} 
+                    className="form-input" 
+                    required 
+                    placeholder="Mínimo 6 caracteres" 
+                    minLength="6"
+                    value={regForm.password}
+                    onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
+                    style={{ backgroundColor: '#ffffff', paddingRight: '70px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegPassword(!showRegPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      color: 'var(--color-blue)',
+                      textTransform: 'uppercase'
+                    }}
+                  >
+                    {showRegPassword ? 'Ocultar' : 'Mostrar'}
+                  </button>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -933,7 +953,7 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
                 }
               `}</style>
 
-              {/* Google reCAPTCHA Widget */}
+              {/* Google reCAPTCHA Widget (Register) */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -951,20 +971,20 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div 
                     onClick={() => {
-                      if (recaptchaState === 'verified') return;
-                      setRecaptchaState('loading');
+                      if (registerCaptchaVerified) return;
+                      setRegisterCaptchaLoading(true);
                       setTimeout(() => {
-                        setRecaptchaState('verified');
-                        setRegAntiSpam(true);
+                        setRegisterCaptchaLoading(false);
+                        setRegisterCaptchaVerified(true);
                         setError('');
                       }, 1000);
                     }}
                     style={{
                       width: '28px',
                       height: '28px',
-                      border: recaptchaState === 'verified' ? 'none' : '2px solid #c1c1c1',
+                      border: registerCaptchaVerified ? 'none' : '2px solid #c1c1c1',
                       borderRadius: '2px',
-                      cursor: recaptchaState === 'verified' ? 'default' : 'pointer',
+                      cursor: registerCaptchaVerified ? 'default' : 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -973,8 +993,8 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
                     }}
                     title="Verificar"
                   >
-                    {recaptchaState === 'idle' && null}
-                    {recaptchaState === 'loading' && (
+                    {!registerCaptchaVerified && !registerCaptchaLoading && null}
+                    {registerCaptchaLoading && (
                       <div className="recaptcha-spinner" style={{
                         width: '18px',
                         height: '18px',
@@ -984,7 +1004,7 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
                         animation: 'spin 0.6s linear infinite'
                       }} />
                     )}
-                    {recaptchaState === 'verified' && (
+                    {registerCaptchaVerified && (
                       <span style={{ fontSize: '1.4rem', color: '#009a29', fontWeight: 'bold' }}>✓</span>
                     )}
                   </div>
