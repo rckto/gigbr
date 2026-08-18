@@ -48,7 +48,19 @@ const GoogleAdSlot = ({ slotId = 'default-slot', height = '90px' }) => {
 };
 
 const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
-  const { t, language, toggleLanguage, setLanguage, validAccessCodes, setCurrentUser, setUserRole, refreshAllData, registerFreelancer, registerEmployer } = useContext(AppContext);
+  const asyncConfirm = (message) => {
+    return new Promise((resolve) => {
+      showConfirm(message, () => resolve(true), () => resolve(false));
+    });
+  };
+
+  const asyncPrompt = (message, defaultValue = '') => {
+    return new Promise((resolve) => {
+      showPrompt(message, defaultValue, (val) => resolve(val), () => resolve(null));
+    });
+  };
+
+  const { t, language, toggleLanguage, setLanguage, showToast, showConfirm, showPrompt, validAccessCodes, setCurrentUser, setUserRole, refreshAllData, registerFreelancer, registerEmployer } = useContext(AppContext);
   
   // Tab/Mode management: true for Register mode, false for Login mode
   const [isRegistering, setIsRegistering] = useState(false);
@@ -134,14 +146,14 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
         }
 
         // Onboarding flow for new Google users
-        const wantToRegister = window.confirm(`Nenhuma conta cadastrada com o e-mail "${emailToUse}". Deseja criar um perfil rápido usando este login social?`);
+        const wantToRegister = asyncConfirm(`Nenhuma conta cadastrada com o e-mail "${emailToUse}". Deseja criar um perfil rápido usando este login social?`);
         if (!wantToRegister) return;
 
-        const isFreelancer = window.confirm("Deseja se cadastrar como Prestador/Freelancer? (Clique em 'Cancelar' para se cadastrar como Produtor/Contratante)");
-        const docNumber = window.prompt(isFreelancer ? "Digite seu CPF (11 dígitos):" : "Digite seu CNPJ (14 dígitos):");
+        const isFreelancer = asyncConfirm("Deseja se cadastrar como Prestador/Freelancer? (Clique em 'Cancelar' para se cadastrar como Produtor/Contratante)");
+        const docNumber = asyncPrompt(isFreelancer ? "Digite seu CPF (11 dígitos):" : "Digite seu CNPJ (14 dígitos):");
         if (!docNumber) return;
 
-        const phoneNumber = window.prompt("Digite seu telefone de contato:");
+        const phoneNumber = asyncPrompt("Digite seu telefone de contato:");
         if (!phoneNumber) return;
 
         const regPayload = {
@@ -178,7 +190,7 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
           setUserRole(data.role);
           await refreshAllData();
           triggerSuccess();
-          alert("✓ Conta criada e autenticada via Firebase com sucesso!");
+          showToast("✓ Conta criada e autenticada via Firebase com sucesso!", "success");
         }
       } catch (err) {
         console.error("Firebase Auth Error:", err);
@@ -186,7 +198,7 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
       }
     } else {
       // simulated Apple Login
-      const emailInput = window.prompt("Digite o e-mail da sua conta Apple para entrar ou cadastrar-se:");
+      const emailInput = asyncPrompt("Digite o e-mail da sua conta Apple para entrar ou cadastrar-se:");
       if (!emailInput) return;
       const emailToUse = emailInput.trim().toLowerCase();
       try {
@@ -215,14 +227,14 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
           }
         }
         
-        const wantToRegister = window.confirm(`Nenhuma conta cadastrada com o e-mail "${emailToUse}". Deseja criar um perfil rápido usando este login social?`);
+        const wantToRegister = asyncConfirm(`Nenhuma conta cadastrada com o e-mail "${emailToUse}". Deseja criar um perfil rápido usando este login social?`);
         if (!wantToRegister) return;
-        const isFreelancer = window.confirm("Deseja se cadastrar como Prestador/Freelancer? (Clique em 'Cancelar' para se cadastrar como Produtor/Contratante)");
-        const fullName = window.prompt("Digite seu nome completo / razão social:");
+        const isFreelancer = asyncConfirm("Deseja se cadastrar como Prestador/Freelancer? (Clique em 'Cancelar' para se cadastrar como Produtor/Contratante)");
+        const fullName = asyncPrompt("Digite seu nome completo / razão social:");
         if (!fullName) return;
-        const docNumber = window.prompt(isFreelancer ? "Digite seu CPF (11 dígitos):" : "Digite seu CNPJ (14 dígitos):");
+        const docNumber = asyncPrompt(isFreelancer ? "Digite seu CPF (11 dígitos):" : "Digite seu CNPJ (14 dígitos):");
         if (!docNumber) return;
-        const phoneNumber = window.prompt("Digite seu telefone de contato:");
+        const phoneNumber = asyncPrompt("Digite seu telefone de contato:");
         if (!phoneNumber) return;
         
         const regPayload = {
@@ -258,7 +270,7 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
           setUserRole(data.role);
           await refreshAllData();
           triggerSuccess();
-          alert("✓ Conta criada e autenticada com sucesso!");
+          showToast("✓ Conta criada e autenticada com sucesso!", "success");
         }
       } catch (err) {
         setError(err.message || 'Erro ao conectar.');
@@ -444,7 +456,7 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
         await refreshAllData();
       } catch (err) {}
 
-      alert('🎉 Cadastro realizado com sucesso! Efetue seu login para acessar o sistema.');
+      showToast('🎉 Cadastro realizado com sucesso! Efetue seu login para acessar o sistema.', "success");
       
       // Reset forms and toggle back to login
       setIsRegistering(false);

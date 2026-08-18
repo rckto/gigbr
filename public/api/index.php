@@ -357,14 +357,14 @@ if ($resource === 'users') {
         $drt = $input['drt'] ?? '';
         $bio = $input['bio'] ?? '';
         $avatar = $input['avatar'] ?? '';
-        $regType = $input['registrationType'] ?? 'PF';
+        $regType = $input['registrationType'] ?? ($input['registration_type'] ?? 'PF');
         $cpf = $input['cpf'] ?? '';
         $cnpj = $input['cnpj'] ?? '';
-        $pixType = $input['pixType'] ?? '';
-        $pixKey = $input['pixKey'] ?? '';
+        $pixType = $input['pixType'] ?? ($input['pix_type'] ?? '');
+        $pixKey = $input['pixKey'] ?? ($input['pix_key'] ?? '');
         $city = $input['city'] ?? 'São Paulo';
         $state = $input['state'] ?? 'SP';
-        $isVetted = $input['is_vetted'] ?? 1;
+        $isVetted = isset($input['is_vetted']) ? (int)$input['is_vetted'] : (isset($input['isVetted']) ? (int)$input['isVetted'] : 1);
         $password = $input['password'] ?? '';
         $marketplaceUrl = $input['marketplace_url'] ?? ($input['marketplaceUrl'] ?? '');
         $websiteUrl = $input['website_url'] ?? ($input['websiteUrl'] ?? '');
@@ -715,7 +715,7 @@ if ($resource === 'emails' && $id === 'send' && $request_method === 'POST') {
                "Content-Type: text/plain; charset=utf-8\r\n" .
                "X-Mailer: PHP/" . phpversion();
     
-    $mail_success = @mail($recipient, "=?UTF-8?B?" . base64_encode($fullSubject) . "?=", $body, $headers);
+    $mail_success = @mail($recipient, "=?UTF-8?B?" . base64_encode($fullSubject) . "?=", $body, $headers, "-f" . $fromMail);
 
     echo json_encode(["success" => $mail_success, "message" => "Email processed.", "method" => "Local Relay Sendmail"]);
     exit;

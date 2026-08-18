@@ -68,6 +68,7 @@ const PublicProfile = ({ id, type, onBack }) => {
   const [successEmail, setSuccessEmail] = useState('');
   const [successCache, setSuccessCache] = useState('');
   const [successRecipient, setSuccessRecipient] = useState('');
+  const [localError, setLocalError] = useState('');
 
   useEffect(() => {
     // Fetch profile from backend Express API with origin checks and offline fallbacks
@@ -167,9 +168,10 @@ const PublicProfile = ({ id, type, onBack }) => {
   const handleContactSubmit = async (e) => {
     e.preventDefault();
     if (!senderName || !senderEmail || !proposedCache) {
-      alert("Por favor, preencha o seu nome, e-mail e proposta de cachê!");
+      setLocalError("Por favor, preencha o seu nome, e-mail e proposta de cachê!");
       return;
     }
+    setLocalError('');
 
     const emailTo = profile.email || 'contato@dominio.com.br';
     const emailSubject = `Nova Proposta de GIG - de ${senderName}`;
@@ -544,6 +546,19 @@ Mensagem:
               </p>
 
               <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {localError && (
+                  <div style={{
+                    backgroundColor: '#fee2e2',
+                    border: '1px solid #fca5a5',
+                    color: '#991b1b',
+                    padding: '10px 14px',
+                    borderRadius: '6px',
+                    fontSize: '0.8rem',
+                    fontWeight: 600
+                  }}>
+                    ⚠️ {localError}
+                  </div>
+                )}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Seu Nome</label>

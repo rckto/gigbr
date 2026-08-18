@@ -8,7 +8,16 @@ import PublicOpportunity from './components/PublicOpportunity';
 import dashboardBg from './assets/dashboard_bg.jpg';
 
 function MainAppContent() {
-  const { currentUser, setCurrentUser } = useContext(AppContext);
+  const { 
+    currentUser, 
+    setCurrentUser,
+    toast,
+    setToast,
+    confirmModal,
+    setConfirmModal,
+    promptModal,
+    setPromptModal
+  } = useContext(AppContext);
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('gigbr_user'));
   const [isMobileView, setIsMobileView] = useState(false);
   const [shareMode, setShareMode] = useState(null); // 'talent' or 'group'
@@ -33,8 +42,7 @@ function MainAppContent() {
     const resetTimer = () => {
       if (inactivityTimeout) clearTimeout(inactivityTimeout);
       inactivityTimeout = setTimeout(() => {
-        console.log("Session expired due to inactivity.");
-        alert("Sua sessão expirou por inatividade. Faça o login novamente.");
+        setToast({ message: "Sua sessão expirou por inatividade. Faça o login novamente.", type: "info" });
         setCurrentUser(null);
       }, INACTIVITY_TIME);
     };
@@ -148,6 +156,109 @@ function MainAppContent() {
       </div>
 
       <PixModal />
+
+      {/* Elegant Toast notification stack */}
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          backgroundColor: toast.type === 'error' ? '#ef4444' : (toast.type === 'success' ? '#10b981' : '#1f2937'),
+          color: '#ffffff',
+          padding: '12px 20px',
+          borderRadius: '8px',
+          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)',
+          zIndex: 11000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          fontSize: '0.85rem',
+          fontWeight: 600,
+          animation: 'fadeIn 0.3s ease',
+          maxWidth: '350px'
+        }}>
+          <span>{toast.type === 'error' ? '❌' : (toast.type === 'success' ? '✅' : 'ℹ️')}</span>
+          <span style={{ flex: 1 }}>{toast.message}</span>
+          <button 
+            onClick={() => setToast(null)}
+            style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', fontSize: '1.2rem', padding: '0 4px', lineHeight: 1 }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* Custom Confirmation Modal */}
+      {confirmModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 12000, padding: '20px'
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: '400px', width: '100%', backgroundColor: '#ffffff', padding: '24px',
+            borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '16px',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15)', color: 'var(--text-main)'
+          }}>
+            <div style={{ fontSize: '1.5rem', textAlign: 'center' }}>⚠️</div>
+            <h4 style={{ fontSize: '1rem', fontWeight: 800, textAlign: 'center', margin: 0 }}>Confirmação Requerida</h4>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center', lineHeight: '1.4', margin: 0 }}>
+              {confirmModal.message}
+            </p>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+              <button onClick={confirmModal.onCancel} className="btn btn-secondary" style={{ flex: 1 }}>Cancelar</button>
+              <button onClick={confirmModal.onConfirm} className="btn btn-primary" style={{ flex: 1, backgroundColor: '#ef4444' }}>Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Prompt Input Modal */}
+      {promptModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 12000, padding: '20px'
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: '400px', width: '100%', backgroundColor: '#ffffff', padding: '24px',
+            borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '14px',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15)', color: 'var(--text-main)'
+          }}>
+            <div style={{ fontSize: '1.5rem', textAlign: 'center' }}>📝</div>
+            <h4 style={{ fontSize: '1rem', fontWeight: 800, textAlign: 'center', margin: 0 }}>Entrada de Informação</h4>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center', margin: 0 }}>
+              {promptModal.message}
+            </p>
+            <input 
+              type="text" 
+              id="customPromptInput"
+              defaultValue={promptModal.defaultValue}
+              className="form-input"
+              style={{ backgroundColor: '#ffffff', fontSize: '0.9rem' }}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  promptModal.onSubmit(e.target.value);
+                }
+              }}
+            />
+            <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+              <button onClick={promptModal.onCancel} className="btn btn-secondary" style={{ flex: 1 }}>Cancelar</button>
+              <button 
+                onClick={() => {
+                  const val = document.getElementById('customPromptInput')?.value;
+                  promptModal.onSubmit(val);
+                }} 
+                className="btn btn-primary" 
+                style={{ flex: 1 }}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

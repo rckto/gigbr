@@ -26,6 +26,46 @@ export const AppProvider = ({ children }) => {
   });
   const [events, setEvents] = useState(mockEvents);
   
+  const [toast, setToast] = useState(null);
+  const [confirmModal, setConfirmModal] = useState(null);
+  const [promptModal, setPromptModal] = useState(null);
+
+  const showToast = (message, type = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(curr => curr?.message === message ? null : curr);
+    }, 4500);
+  };
+
+  const showConfirm = (message, onConfirm, onCancel) => {
+    setConfirmModal({
+      message,
+      onConfirm: () => {
+        if (onConfirm) onConfirm();
+        setConfirmModal(null);
+      },
+      onCancel: () => {
+        if (onCancel) onCancel();
+        setConfirmModal(null);
+      }
+    });
+  };
+
+  const showPrompt = (message, defaultValue, onSubmit, onCancel) => {
+    setPromptModal({
+      message,
+      defaultValue,
+      onSubmit: (value) => {
+        if (onSubmit) onSubmit(value);
+        setPromptModal(null);
+      },
+      onCancel: () => {
+        if (onCancel) onCancel();
+        setPromptModal(null);
+      }
+    });
+  };
+  
   // Extend mock contractors with default bios and credentials
   const extendedContractors = mockContractors.map(c => {
     let bio = '';
@@ -513,7 +553,7 @@ export const AppProvider = ({ children }) => {
     setValidAccessCodes(prev => [...prev, generatedCode]);
     setJobOpportunities(prev => [newJob, ...prev]);
     addNotification('web', `Nova oportunidade publicada: ${newJob.title}. Código gerado: ${generatedCode}`, 'all');
-    alert(`Vaga publicada com sucesso!\nCódigo de acesso gerado para produtores: ${generatedCode}`);
+    showToast(`Vaga publicada com sucesso! Código de acesso gerado para produtores: ${generatedCode}`, 'success');
   }
 
   async function createEvent(data) {
@@ -723,8 +763,7 @@ export const AppProvider = ({ children }) => {
         body: JSON.stringify(data)
       });
       if (res.ok) {
-        const updatedUser = await res.json();
-        const finalUser = { ...data, ...updatedUser };
+        const finalUser = normalizeUserCase({ ...data, ...updatedUser });
         
         setContractors(prev => {
           const exists = prev.some(c => c.id === id);
@@ -1347,6 +1386,15 @@ export const AppProvider = ({ children }) => {
         updateOpportunityAdmin,
         sendEmailProposal,
         setLanguage,
+        toast,
+        setToast,
+        showToast,
+        confirmModal,
+        setConfirmModal,
+        showConfirm,
+        promptModal,
+        setPromptModal,
+        showPrompt,
         t: t[language] || t['pt-BR']
       }}
     >

@@ -355,7 +355,7 @@ const EmployerCard = ({ employer, t }) => {
             <button 
               onClick={(e) => {
                 e.stopPropagation(); // Avoid flipback
-                alert(`Enviando proposta de show / portfólio para ${employer.companyName}.`);
+                showToast(`Enviando proposta de show / portfólio para ${employer.companyName}.`, "success");
               }}
               className="btn btn-secondary btn-sm"
               style={{ width: '100%', padding: '6px 12px' }}
@@ -372,11 +372,26 @@ const EmployerCard = ({ employer, t }) => {
 };
 
 const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
+  const asyncConfirm = (message) => {
+    return new Promise((resolve) => {
+      showConfirm(message, () => resolve(true), () => resolve(false));
+    });
+  };
+
+  const asyncPrompt = (message, defaultValue = '') => {
+    return new Promise((resolve) => {
+      showPrompt(message, defaultValue, (val) => resolve(val), () => resolve(null));
+    });
+  };
+
   const {
     t,
     language,
     toggleLanguage,
     setLanguage,
+    showToast,
+    showConfirm,
+    showPrompt,
     events,
     contractors,
     shifts,
@@ -605,7 +620,7 @@ Contato do profissional: ${currentUser.phone || 'Não informado'}
         })
       }).catch(err => console.warn("Email dispatcher API offline."));
 
-      alert(`✅ Candidatura enviada com sucesso!\nUma notificação contendo seu perfil foi encaminhada para a caixa postal:\n📧 ${emailTo}\n\nO registro foi salvo em emails_sent.log.`);
+      showToast(`✅ Candidatura enviada com sucesso!\nUma notificação contendo seu perfil foi encaminhada para a caixa postal:\n📧 ${emailTo}\n\nO registro foi salvo em emails_sent.log.`, "success");
     }
   };
 
@@ -680,7 +695,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
       setCurrentUser(payload);
       setUserRole('freelancer');
 
-      alert(`🎉 Cadastro e candidatura concluídos com sucesso!\nSeu cadastro permanente foi criado com o e-mail: ${payload.email}.\n\nSeja bem-vindo(a) ao GIG BR!`);
+      showToast(`🎉 Cadastro e candidatura concluídos com sucesso!\nSeu cadastro permanente foi criado com o e-mail: ${payload.email}.\n\nSeja bem-vindo(a) ao GIG BR!`, "success");
 
       setShowGuestRegisterModal(false);
       setGuestTargetJob(null);
@@ -692,13 +707,13 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
   const handleEventSubmit = async (e) => {
     e.preventDefault();
     if (userRole !== 'employer' || !currentUser.cnpj) {
-      alert("Erro de Segurança: Um evento só poderá ser criado por um produtor com CNPJ!");
+      showToast("Erro de Segurança: Um evento só poderá ser criado por um produtor com CNPJ!", "error");
       return;
     }
     if (!eventForm.name || !eventForm.budgetLimit) return;
 
     if (!eventForm.description || eventForm.description.trim().length < 15) {
-      alert("Por favor, preencha a descrição detalhada do evento (mínimo de 15 caracteres)!");
+      showToast("Por favor, preencha a descrição detalhada do evento (mínimo de 15 caracteres)!", "success");
       return;
     }
 
@@ -721,18 +736,18 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
       });
       setTimeout(() => setEventSuccess(false), 4000);
     } catch (err) {
-      alert("Erro ao criar evento: " + err.message);
+      showToast("Erro ao criar evento: " + err.message, "error");
     }
   };
 
   const handleCrewSubmit = async (e) => {
     e.preventDefault();
     if (!activeEventId) {
-      alert("Por favor, selecione um evento ativo antes!");
+      showToast("Por favor, selecione um evento ativo antes!", "success");
       return;
     }
     if (!crewForm.contractorId) {
-      alert("Selecione um profissional cadastrado!");
+      showToast("Selecione um profissional cadastrado!", "success");
       return;
     }
 
@@ -751,7 +766,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
       });
       setTimeout(() => setCrewSuccess(false), 4000);
     } catch (err) {
-      alert("Erro ao alocar profissional: " + err.message);
+      showToast("Erro ao alocar profissional: " + err.message, "error");
     }
   };
 
@@ -776,14 +791,14 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
       await updateEvent(editingEventId, editEventForm);
       setShowEditEventModal(false);
       setEditingEventId(null);
-      alert("Show/Evento atualizado com sucesso!");
+      showToast("Show/Evento atualizado com sucesso!", "success");
     } catch (err) {
-      alert("Erro ao editar evento: " + err.message);
+      showToast("Erro ao editar evento: " + err.message, "error");
     }
   };
 
   const handleEventDelete = async (eventId) => {
-    if (!window.confirm("⚠️ Deseja realmente excluir este show/evento? Esta ação é irreversível e excluirá todo o histórico associado.")) {
+    if (!asyncConfirm("⚠️ Deseja realmente excluir este show/evento? Esta ação é irreversível e excluirá todo o histórico associado.")) {
       return;
     }
 
@@ -795,9 +810,9 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
       } else {
         setActiveEventId('');
       }
-      alert("Show/Evento excluído com sucesso!");
+      showToast("Show/Evento excluído com sucesso!", "success");
     } catch (err) {
-      alert("Erro ao excluir evento: " + err.message);
+      showToast("Erro ao excluir evento: " + err.message, "error");
     }
   };
 
@@ -806,7 +821,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
     if (!activeEventId || !activeEvent) return;
     const amount = parseFloat(crowdfundAmount);
     if (isNaN(amount) || amount <= 0) {
-      alert("Por favor, digite um valor válido de apoio.");
+      showToast("Por favor, digite um valor válido de apoio.", "success");
       return;
     }
 
@@ -824,9 +839,9 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
       setCrowdfundAmount('');
       setCrowdfundSuccess(true);
       setTimeout(() => setCrowdfundSuccess(false), 3000);
-      alert(`🎉 Obrigado pelo apoio de R$ ${amount.toFixed(2)} via PIX!`);
+      showToast(`🎉 Obrigado pelo apoio de R$ ${amount.toFixed(2)} via PIX!`, "success");
     } catch (err) {
-      alert("Erro ao processar contribuição: " + err.message);
+      showToast("Erro ao processar contribuição: " + err.message, "error");
     }
   };
 
@@ -892,7 +907,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
   const handleJobSubmit = (e) => {
     e.preventDefault();
     if (!jobForm.title || !jobForm.payment || parseFloat(jobForm.payment) <= 0) {
-      alert("O cachê líquido obrigatório deve ser informado e maior que zero!");
+      showToast("O cachê líquido obrigatório deve ser informado e maior que zero!", "success");
       return;
     }
     postJobOpportunity(jobForm);
@@ -911,7 +926,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
   const handleGroupSubmit = (e) => {
     e.preventDefault();
     if (!groupForm.name || !groupForm.description || !groupForm.email) {
-      alert("Por favor, preencha o nome, e-mail de contato e descrição do grupo!");
+      showToast("Por favor, preencha o nome, e-mail de contato e descrição do grupo!", "success");
       return;
     }
     
@@ -1036,11 +1051,11 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
         };
 
         if (userRole === 'freelancer') {
-          updatedData.category = form.elements.profileCategory.value;
-          updatedData.omb = form.elements.profileOmb.value;
-          updatedData.drt = form.elements.profileDrt.value;
-        } else {
-          updatedData.companyName = form.elements.profileCompanyName.value;
+          updatedData.category = form.elements.profileCategory?.value || '';
+          updatedData.omb = form.elements.profileOmb?.value || '';
+          updatedData.drt = form.elements.profileDrt?.value || '';
+        } else if (userRole === 'employer') {
+          updatedData.companyName = form.elements.profileCompanyName?.value || '';
         }
 
         try {
@@ -1050,9 +1065,9 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
             await updateEmployer(currentUser.id, updatedData);
           }
           setCurrentUser(prev => ({ ...prev, ...updatedData }));
-          alert("✓ Perfil cadastrado atualizado com sucesso!");
+          showToast("✓ Perfil cadastrado atualizado com sucesso!", "success");
         } catch(err) {
-          alert("Erro ao atualizar perfil: " + err.message);
+          showToast("Erro ao atualizar perfil: " + err.message, "error");
         }
       }} style={{ display: 'flex', flexDirection: 'column', gap: '16px', textAlign: 'left' }}>
 
@@ -1258,7 +1273,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                 const file = e.target.files[0];
                 if (file) {
                   if (file.size > 2 * 1024 * 1024) {
-                    alert("A imagem não pode ultrapassar 2MB!");
+                    showToast("A imagem não pode ultrapassar 2MB!", "success");
                     return;
                   }
                   const reader = new FileReader();
@@ -1287,16 +1302,16 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
         <button 
           type="button" 
           onClick={async () => {
-            const confirmDelete = window.confirm("⚠️ ATENÇÃO: Tem certeza absoluta que deseja excluir sua conta permanentemente? Esta ação não pode ser desfeita!");
+            const confirmDelete = asyncConfirm("⚠️ ATENÇÃO: Tem certeza absoluta que deseja excluir sua conta permanentemente? Esta ação não pode ser desfeita!");
             if (confirmDelete) {
               try {
                 await deleteUserAdmin(currentUser.id);
-                alert("✓ Sua conta foi excluída com sucesso.");
+                showToast("✓ Sua conta foi excluída com sucesso.", "success");
                 setCurrentUser(null);
                 setUserRole(null);
                 setDashboardTab('talentos');
               } catch (err) {
-                alert("Erro ao excluir conta: " + err.message);
+                showToast("Erro ao excluir conta: " + err.message, "error");
               }
             }
           }}
@@ -1739,7 +1754,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                                 e.stopPropagation();
                                 const shareUrl = `${window.location.origin}?group=${g.id}`;
                                 navigator.clipboard.writeText(shareUrl);
-                                alert(`✓ Link de compartilhamento do grupo copiado:\n${shareUrl}`);
+                                showToast(`✓ Link de compartilhamento do grupo copiado:\n${shareUrl}`, "success");
                               }}
                               className="btn btn-secondary btn-sm"
                               style={{ fontSize: '0.7rem' }}
@@ -1747,7 +1762,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                               🔗 Compartilhar
                             </button>
                             <button 
-                              onClick={() => alert(`Enviando solicitação de fechamento para a equipe "${g.name}". Todos os membros receberão o aviso.`)}
+                              onClick={() => showToast(`Enviando solicitação de fechamento para a equipe "${g.name}". Todos os membros receberão o aviso.`, "success")}
                               className="btn btn-primary btn-sm"
                             >
                               Contratar Grupo
@@ -2149,7 +2164,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                         const file = e.target.files[0];
                         if (file) {
                           if (file.size > 2 * 1024 * 1024) {
-                            alert("Erro: O tamanho da imagem não pode ultrapassar o limite de 2MB.");
+                            showToast("Erro: O tamanho da imagem não pode ultrapassar o limite de 2MB.", "error");
                             e.target.value = "";
                             return;
                           }
@@ -2174,7 +2189,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                         ];
                         const chosen = randomFaces[Math.floor(Math.random() * randomFaces.length)];
                         setFreelancerForm({...freelancerForm, avatar: chosen});
-                        alert("Foto de perfil sincronizada com sua conta social com sucesso!");
+                        showToast("Foto de perfil sincronizada com sua conta social com sucesso!", "success");
                       }}
                       className="btn btn-secondary" 
                       style={{ width: '100%', fontSize: '0.7rem', padding: '10px 4px' }}
@@ -2505,7 +2520,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                         const file = e.target.files[0];
                         if (file) {
                           if (file.size > 2 * 1024 * 1024) {
-                            alert("A foto do grupo deve ter no máximo 2MB!");
+                            showToast("A foto do grupo deve ter no máximo 2MB!", "success");
                             e.target.value = "";
                             return;
                           }
@@ -3181,7 +3196,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                 onClick={() => {
                   preHireWithDeposit(hiringContractor.id, activeEventId, 400.00);
                   const targetEmail = hiringContractor.email || `${hiringContractor.name.toLowerCase().replace(/\s+/g, '.')}@gmail.com`;
-                  alert(`Solicitação de contratação realizada com sucesso!\n\nUma notificação com a ficha do show e a confirmação de segurança (50% de sinal) foi enviada diretamente para a caixa postal do profissional em:\n📧 ${targetEmail}`);
+                  showToast(`Solicitação de contratação realizada com sucesso!\n\nUma notificação com a ficha do show e a confirmação de segurança (50% de sinal) foi enviada diretamente para a caixa postal do profissional em:\n📧 ${targetEmail}`, "success");
                   setHiringContractor(null);
                 }} 
                 className="btn btn-primary"
@@ -3322,7 +3337,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                           </button>
                           <button 
                             onClick={() => {
-                              if (confirm(`Deseja realmente deletar o prestador ${c.name}?`)) {
+                              if (asyncConfirm(`Deseja realmente deletar o prestador ${c.name}?`)) {
                                 deleteUserAdmin(c.id);
                               }
                             }}
@@ -3368,7 +3383,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                           </button>
                           <button 
                             onClick={() => {
-                              if (confirm(`Deseja realmente deletar a produtora ${e.companyName}?`)) {
+                              if (asyncConfirm(`Deseja realmente deletar a produtora ${e.companyName}?`)) {
                                 deleteUserAdmin(e.id);
                               }
                             }}
@@ -3430,7 +3445,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                             </button>
                             <button 
                               onClick={() => {
-                                if (confirm(`Deseja realmente deletar o grupo ${g.name}?`)) {
+                                if (asyncConfirm(`Deseja realmente deletar o grupo ${g.name}?`)) {
                                   deleteGroupAdmin(g.id);
                                 }
                               }}
@@ -3493,7 +3508,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                           </button>
                           <button 
                             onClick={() => {
-                              if (confirm(`Deseja realmente excluir a vaga "${opp.title}"?`)) {
+                              if (asyncConfirm(`Deseja realmente excluir a vaga "${opp.title}"?`)) {
                                 deleteOpportunityAdmin(opp.id);
                               }
                             }}
@@ -3562,9 +3577,9 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                   try {
                     await updateContractor(currentUser.id, { pixKey: key, pixType: type });
                     setCurrentUser(prev => ({ ...prev, pixKey: key, pixType: type }));
-                    alert("Chave PIX atualizada com sucesso!");
+                    showToast("Chave PIX atualizada com sucesso!", "success");
                   } catch(err) {
-                    alert("Erro ao atualizar chave PIX: " + err.message);
+                    showToast("Erro ao atualizar chave PIX: " + err.message, "error");
                   }
                 }} style={{ display: 'flex', gap: '8px' }}>
                   <select 
@@ -3637,7 +3652,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                           onClick={() => {
                             const eventName = event ? event.name : 'Show';
                             const timeNow = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                            alert(`Check-in de Entrada Realizado com Sucesso via GPS corporativo no local: ${event?.location} às ${timeNow}`);
+                            showToast(`Check-in de Entrada Realizado com Sucesso via GPS corporativo no local: ${event?.location} às ${timeNow}`, "success");
                             shifts.find(s => s.id === todayShift.id).status = 'Em Andamento';
                             shifts.find(s => s.id === todayShift.id).checkInTime = timeNow;
                             // Force state reload
@@ -3653,10 +3668,10 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                       {todayShift.status === 'Em Andamento' && (
                         <button 
                           onClick={() => {
-                            const hours = prompt("Confirme as horas efetivas de palco trabalhadas hoje:", todayShift.scheduledHours);
+                            const hours = asyncPrompt("Confirme as horas efetivas de palco trabalhadas hoje:", todayShift.scheduledHours);
                             if (hours !== null) {
                               const timeNow = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                              alert(`Check-out realizado às ${timeNow}. Horas registradas: ${hours}h. Aguardando liberação do produtor.`);
+                              showToast(`Check-out realizado às ${timeNow}. Horas registradas: ${hours}h. Aguardando liberação do produtor.`, "success");
                               const target = shifts.find(s => s.id === todayShift.id);
                               target.status = parseFloat(hours) !== todayShift.scheduledHours ? 'Disputado' : 'Finalizado';
                               target.actualHours = parseFloat(hours);
@@ -3716,7 +3731,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                 onClick={() => {
                   const shareUrl = `${window.location.origin}?talent=${currentUser?.id}`;
                   navigator.clipboard.writeText(shareUrl);
-                  alert(`✓ Link de compartilhamento do seu card copiado para área de transferência:\n${shareUrl}`);
+                  showToast(`✓ Link de compartilhamento do seu card copiado para área de transferência:\n${shareUrl}`, "success");
                 }}
                 className="btn btn-secondary btn-sm"
                 style={{ fontSize: '0.7rem' }}
@@ -4297,7 +4312,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                       const file = evt.target.files[0];
                       if (file) {
                         if (file.size > 2 * 1024 * 1024) {
-                          alert("A foto de perfil deve ter no máximo 2MB!");
+                          showToast("A foto de perfil deve ter no máximo 2MB!", "success");
                           return;
                         }
                         const reader = new FileReader();
@@ -4411,7 +4426,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                     const file = evt.target.files[0];
                     if (file) {
                       if (file.size > 2 * 1024 * 1024) {
-                        alert("A foto do grupo deve ter no máximo 2MB!");
+                        showToast("A foto do grupo deve ter no máximo 2MB!", "success");
                         evt.target.value = "";
                         return;
                       }
@@ -4650,7 +4665,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                     const file = evt.target.files[0];
                     if (file) {
                       if (file.size > 2 * 1024 * 1024) {
-                        alert("A foto do perfil deve ter no máximo 2MB!");
+                        showToast("A foto do perfil deve ter no máximo 2MB!", "success");
                         evt.target.value = "";
                         return;
                       }

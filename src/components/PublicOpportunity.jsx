@@ -194,7 +194,7 @@ export default function PublicOpportunity({ code, onBack }) {
           <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <button 
               onClick={() => {
-                alert("Para candidatar-se, crie ou acesse sua conta GIG BR no painel principal utilizando este código de acesso nas opções de convite.");
+                showToast("Para candidatar-se, crie ou acesse sua conta GIG BR no painel principal utilizando este código de acesso nas opções de convite.", "info");
                 onBack();
               }} 
               className="btn btn-primary" 
