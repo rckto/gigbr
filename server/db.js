@@ -112,6 +112,15 @@ export async function initializeDatabase() {
       try {
         await pool.query('ALTER TABLE users ADD COLUMN password VARCHAR(255)');
       } catch (err) {}
+      try {
+        await pool.query('ALTER TABLE users MODIFY COLUMN avatar LONGTEXT');
+      } catch (err) {}
+      try {
+        await pool.query('ALTER TABLE groups MODIFY COLUMN avatar LONGTEXT');
+      } catch (err) {}
+      try {
+        await pool.query('ALTER TABLE users ADD COLUMN marketplace_url TEXT');
+      } catch (err) {}
     } catch (error) {
       console.warn('MySQL connection failed. Falling back to High-Fidelity Memory Mode.');
       console.error(error.message);
@@ -171,8 +180,8 @@ export async function getUserByEmail(email) {
 export async function insertUser(user) {
   if (useMySQL) {
     const query = `
-      INSERT INTO users (id, name, email, password, phone, role, cpf, cnpj, registration_type, omb, drt, bio, avatar, city, state, is_vetted, rating, completed_shifts, pix_type, pix_key)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (id, name, email, password, phone, role, cpf, cnpj, registration_type, omb, drt, bio, avatar, city, state, is_vetted, rating, completed_shifts, pix_type, pix_key, marketplace_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     await pool.query(query, [
       user.id, user.name, user.email, user.password || '', user.phone || '', user.role || 'freelancer',
@@ -180,7 +189,8 @@ export async function insertUser(user) {
       user.omb || '', user.drt || '', user.bio || '', user.avatar || '',
       user.city || 'São Paulo', user.state || 'SP', user.is_vetted !== undefined ? user.is_vetted : 1,
       user.rating || 5.00, user.completed_shifts || 0,
-      user.pixType || user.pix_type || '', user.pixKey || user.pix_key || ''
+      user.pixType || user.pix_type || '', user.pixKey || user.pix_key || '',
+      user.marketplaceUrl || user.marketplace_url || ''
     ]);
   } else {
     memoryDB.users.push({
@@ -191,7 +201,8 @@ export async function insertUser(user) {
       pix_key: user.pixKey || user.pix_key || '',
       is_vetted: user.is_vetted !== undefined ? user.is_vetted : 1,
       rating: user.rating || 5.00,
-      completed_shifts: user.completed_shifts || 0
+      completed_shifts: user.completed_shifts || 0,
+      marketplace_url: user.marketplaceUrl || user.marketplace_url || ''
     });
     saveMemoryDB();
   }
@@ -203,7 +214,7 @@ export async function updateUser(id, data) {
     const query = `
       UPDATE users SET 
         name = ?, role = ?, email = ?, password = COALESCE(NULLIF(?, ''), password), phone = ?, omb = ?, drt = ?, bio = ?, avatar = ?, 
-        registration_type = ?, cpf = ?, cnpj = ?, pix_type = ?, pix_key = ?, city = ?, state = ?, is_vetted = ?
+        registration_type = ?, cpf = ?, cnpj = ?, pix_type = ?, pix_key = ?, city = ?, state = ?, is_vetted = ?, marketplace_url = ?
       WHERE id = ?
     `;
     await pool.query(query, [
@@ -211,7 +222,9 @@ export async function updateUser(id, data) {
       data.registrationType || data.registration_type || 'PF', data.cpf || '', data.cnpj || '',
       data.pixType || data.pix_type || '', data.pixKey || data.pix_key || '',
       data.city || 'São Paulo', data.state || 'SP',
-      data.is_vetted !== undefined ? data.is_vetted : 1, id
+      data.is_vetted !== undefined ? data.is_vetted : 1,
+      data.marketplaceUrl || data.marketplace_url || '',
+      id
     ]);
   } else {
     const index = memoryDB.users.findIndex(u => u.id === id);

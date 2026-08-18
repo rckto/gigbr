@@ -128,6 +128,20 @@ try {
         crowdfund_raised DECIMAL(12,2) DEFAULT 0.00
     )");
 
+    // Database schema migrations
+    try {
+        $pdo->exec("ALTER TABLE users MODIFY COLUMN avatar LONGTEXT");
+        $pdo->exec("ALTER TABLE groups MODIFY COLUMN avatar LONGTEXT");
+    } catch (Exception $e) {
+        // Ignore errors
+    }
+
+    try {
+        $pdo->exec("ALTER TABLE users ADD COLUMN marketplace_url TEXT DEFAULT NULL");
+    } catch (Exception $e) {
+        // Ignore errors
+    }
+
     // Seed admin if missing
     $stmt = $pdo->prepare("SELECT id FROM users WHERE email = 'admin@gigbr.com.br'");
     $stmt->execute();
@@ -346,13 +360,14 @@ if ($resource === 'users') {
         $state = $input['state'] ?? 'SP';
         $isVetted = $input['is_vetted'] ?? 1;
         $password = $input['password'] ?? '';
+        $marketplaceUrl = $input['marketplace_url'] ?? ($input['marketplaceUrl'] ?? '');
 
         if ($password) {
-            $stmt = $pdo->prepare("UPDATE users SET name=?, email=?, password=?, phone=?, role=?, omb=?, drt=?, bio=?, avatar=?, registration_type=?, cpf=?, cnpj=?, pix_type=?, pix_key=?, city=?, state=?, is_vetted=? WHERE id=?");
-            $stmt->execute([$name, $email, $password, $phone, $role, $omb, $drt, $bio, $avatar, $regType, $cpf, $cnpj, $pixType, $pixKey, $city, $state, $isVetted, $id]);
+            $stmt = $pdo->prepare("UPDATE users SET name=?, email=?, password=?, phone=?, role=?, omb=?, drt=?, bio=?, avatar=?, registration_type=?, cpf=?, cnpj=?, pix_type=?, pix_key=?, city=?, state=?, is_vetted=?, marketplace_url=? WHERE id=?");
+            $stmt->execute([$name, $email, $password, $phone, $role, $omb, $drt, $bio, $avatar, $regType, $cpf, $cnpj, $pixType, $pixKey, $city, $state, $isVetted, $marketplaceUrl, $id]);
         } else {
-            $stmt = $pdo->prepare("UPDATE users SET name=?, email=?, phone=?, role=?, omb=?, drt=?, bio=?, avatar=?, registration_type=?, cpf=?, cnpj=?, pix_type=?, pix_key=?, city=?, state=?, is_vetted=? WHERE id=?");
-            $stmt->execute([$name, $email, $phone, $role, $omb, $drt, $bio, $avatar, $regType, $cpf, $cnpj, $pixType, $pixKey, $city, $state, $isVetted, $id]);
+            $stmt = $pdo->prepare("UPDATE users SET name=?, email=?, phone=?, role=?, omb=?, drt=?, bio=?, avatar=?, registration_type=?, cpf=?, cnpj=?, pix_type=?, pix_key=?, city=?, state=?, is_vetted=?, marketplace_url=? WHERE id=?");
+            $stmt->execute([$name, $email, $phone, $role, $omb, $drt, $bio, $avatar, $regType, $cpf, $cnpj, $pixType, $pixKey, $city, $state, $isVetted, $marketplaceUrl, $id]);
         }
 
         $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
@@ -488,7 +503,11 @@ if ($resource === 'groups') {
 
 if ($resource === 'opportunities') {
     if ($request_method === 'GET') {
-        if ($id) {
+        if (isset($_GET['code'])) {
+            $stmt = $pdo->prepare("SELECT * FROM opportunities WHERE access_code = ?");
+            $stmt->execute([$_GET['code']]);
+            echo json_encode($stmt->fetch());
+        } else if ($id) {
             $stmt = $pdo->prepare("SELECT * FROM opportunities WHERE id = ?");
             $stmt->execute([$id]);
             echo json_encode($stmt->fetch());

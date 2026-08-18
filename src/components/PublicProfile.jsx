@@ -341,9 +341,9 @@ Mensagem:
 
           {/* Direct Contact Buttons */}
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
-            {profile.phone && (
+            {profile.cnpj ? (
               <a 
-                href={`https://wa.me/55${profile.phone.replace(/[^\d]/g, '')}`} 
+                href={profile.marketplace_url || 'https://www.mercadolivre.com.br'} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 style={{ 
@@ -351,60 +351,87 @@ Mensagem:
                   alignItems: 'center', 
                   justifyContent: 'center', 
                   gap: '8px', 
-                  fontSize: '0.8rem', 
-                  padding: '10px', 
-                  backgroundColor: '#25D366', 
+                  fontSize: '0.85rem', 
+                  padding: '12px', 
+                  backgroundColor: '#3b82f6', 
                   color: '#ffffff', 
                   border: 'none',
                   textDecoration: 'none',
-                  fontWeight: 700,
-                  borderRadius: 'var(--radius-sm)'
+                  fontWeight: 800,
+                  borderRadius: 'var(--radius-sm)',
+                  boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.2)'
                 }}
               >
-                💬 WhatsApp Direto
+                🛒 Ir para o Marketplace
               </a>
-            )}
-            {profile.phone && (
-              <a 
-                href={`tel:${profile.phone.replace(/[^\d]/g, '')}`}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  gap: '8px', 
-                  fontSize: '0.8rem', 
-                  padding: '10px', 
-                  backgroundColor: '#ffffff', 
-                  border: '1px solid #cbd5e1',
-                  color: '#0f172a',
-                  textDecoration: 'none',
-                  fontWeight: 700,
-                  borderRadius: 'var(--radius-sm)'
-                }}
-              >
-                📞 Ligar para Telefone
-              </a>
-            )}
-            {profile.email && (
-              <a 
-                href={`mailto:${profile.email}`}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  gap: '8px', 
-                  fontSize: '0.8rem', 
-                  padding: '10px', 
-                  backgroundColor: '#ffffff', 
-                  border: '1px solid #cbd5e1',
-                  color: '#0f172a',
-                  textDecoration: 'none',
-                  fontWeight: 700,
-                  borderRadius: 'var(--radius-sm)'
-                }}
-              >
-                ✉️ Enviar E-mail Direto
-              </a>
+            ) : (
+              <>
+                {profile.phone && (
+                  <a 
+                    href={`https://wa.me/55${profile.phone.replace(/[^\d]/g, '')}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      gap: '8px', 
+                      fontSize: '0.8rem', 
+                      padding: '10px', 
+                      backgroundColor: '#25D366', 
+                      color: '#ffffff', 
+                      border: 'none',
+                      textDecoration: 'none',
+                      fontWeight: 700,
+                      borderRadius: 'var(--radius-sm)'
+                    }}
+                  >
+                    💬 WhatsApp Direto
+                  </a>
+                )}
+                {profile.phone && (
+                  <a 
+                    href={`tel:${profile.phone.replace(/[^\d]/g, '')}`}
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      gap: '8px', 
+                      fontSize: '0.8rem', 
+                      padding: '10px', 
+                      backgroundColor: '#ffffff', 
+                      border: '1px solid #cbd5e1',
+                      color: '#0f172a',
+                      textDecoration: 'none',
+                      fontWeight: 700,
+                      borderRadius: 'var(--radius-sm)'
+                    }}
+                  >
+                    📞 Ligar para Telefone
+                  </a>
+                )}
+                {profile.email && (
+                  <a 
+                    href={`mailto:${profile.email}`}
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      gap: '8px', 
+                      fontSize: '0.8rem', 
+                      padding: '10px', 
+                      backgroundColor: '#ffffff', 
+                      border: '1px solid #cbd5e1',
+                      color: '#0f172a',
+                      textDecoration: 'none',
+                      fontWeight: 700,
+                      borderRadius: 'var(--radius-sm)'
+                    }}
+                  >
+                    ✉️ Enviar E-mail Direto
+                  </a>
+                )}
+              </>
             )}
           </div>
 

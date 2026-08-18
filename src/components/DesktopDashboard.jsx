@@ -365,16 +365,7 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
   // Layout Tab State: 'talentos', 'vagas', 'cadastro', 'financeiro', 'admin', 'freelancer_dash'
   const [dashboardTab, setDashboardTab] = useState('talentos');
 
-  // Automatically redirect based on user role
-  useEffect(() => {
-    if (userRole === 'freelancer') {
-      setDashboardTab('freelancer_dash');
-    } else if (userRole === 'admin') {
-      setDashboardTab('admin');
-    } else if (userRole === 'guest') {
-      setDashboardTab('vagas');
-    }
-  }, [userRole]);
+  // Automatically default to Talent Directory (talentos) upon login as requested
   
   // Talent Sub-Tab: 'individuais', 'equipes', or 'contratantes'
   const [talentSubTab, setTalentSubTab] = useState('individuais');
@@ -972,6 +963,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
         const state = form.elements.profileState.value;
         const bio = form.elements.profileBio.value;
         const password = form.elements.profilePassword.value;
+        const marketplaceUrl = form.elements.profileMarketplaceUrl ? form.elements.profileMarketplaceUrl.value : '';
         
         const updatedData = {
           name,
@@ -986,7 +978,8 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
           city,
           state,
           bio,
-          avatar: currentUser?.avatar || ''
+          avatar: currentUser?.avatar || '',
+          marketplace_url: marketplaceUrl
         };
 
         if (userRole === 'freelancer') {
@@ -1167,6 +1160,22 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
             placeholder="Digite a nova senha se deseja alterar" style={{ backgroundColor: '#ffffff' }}
           />
         </div>
+
+        {(currentUser?.cnpj || currentUser?.registrationType === 'PJ') && (
+          <div style={{ padding: '12px', border: '1px solid #e2e8f0', borderRadius: '6px', backgroundColor: '#f8fafc', marginBottom: '12px' }}>
+            <h4 style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px', color: '#0f172a' }}>🌐 Integração de Marketplace & Vendas</h4>
+            <p style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: '10px' }}>Insira a URL do seu catálogo de vendas externo ou marketplace para habilitar vendas em seu perfil.</p>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Link do Marketplace / Catálogo de Produtos</label>
+              <input 
+                type="url" name="profileMarketplaceUrl" className="form-input" 
+                defaultValue={currentUser?.marketplace_url || currentUser?.marketplaceUrl || ''} 
+                placeholder="Ex: https://lista.mercadolivre.com.br/_CustId_XXXX ou link da API/Loja" 
+                style={{ backgroundColor: '#ffffff' }}
+              />
+            </div>
+          </div>
+        )}
 
         <div>
           <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Biografia / Apresentação</label>
@@ -1352,6 +1361,15 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
               style={{ border: '2px dashed var(--color-green)' }}
             >
               📱 Meu Dashboard
+            </button>
+          )}
+          {currentUser && (currentUser?.cnpj || currentUser?.registrationType === 'PJ') && (
+            <button 
+              onClick={() => setDashboardTab('marketplace')}
+              className={`btn ${dashboardTab === 'marketplace' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+              style={{ border: '2px dashed #3b82f6', color: '#1d4ed8', backgroundColor: '#eff6ff' }}
+            >
+              🛒 Marketplace
             </button>
           )}
           {currentUser && (
@@ -3123,6 +3141,20 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
       {dashboardTab === 'admin' && currentUser?.email === 'admin@gigbr.com.br' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc', padding: '16px 24px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            <div>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, color: '#0f172a' }}>⚙️ Painel do Administrador Central</h2>
+              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '2px 0 0 0' }}>Gerenciamento global de usuários, grupos, permissões e homologações.</p>
+            </div>
+            <button 
+              onClick={() => setCurrentUser(null)} 
+              className="btn btn-secondary btn-sm"
+              style={{ backgroundColor: '#fee2e2', color: '#991b1b', borderColor: '#fca5a5', fontWeight: 700, padding: '8px 16px' }}
+            >
+              🚪 Sair do Sistema
+            </button>
+          </div>
+          
           {/* Admin Header Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
             <div className="glass-panel card-glow" style={{ padding: '20px', textAlign: 'center' }}>
@@ -3635,6 +3667,101 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
         </div>
       )}
 
+      {/* 7. MEU PERFIL TAB */}
+      {dashboardTab === 'meu_perfil' && (
+        <div style={{ maxWidth: '700px', margin: '0 auto', width: '100%' }} className="glass-panel">
+          <div style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0 }}>
+                ⚙️ Minhas Informações Cadastrais
+              </h3>
+              <button 
+                onClick={() => {
+                  const shareUrl = `${window.location.origin}?talent=${currentUser?.id}`;
+                  navigator.clipboard.writeText(shareUrl);
+                  alert(`✓ Link de compartilhamento do seu card copiado para área de transferência:\n${shareUrl}`);
+                }}
+                className="btn btn-secondary btn-sm"
+                style={{ fontSize: '0.7rem' }}
+              >
+                🔗 Compartilhar Card
+              </button>
+            </div>
+            {renderProfileForm()}
+          </div>
+        </div>
+      )}
+
+      {/* 8. MARKETPLACE & VENDAS TAB */}
+      {dashboardTab === 'marketplace' && (currentUser?.cnpj || currentUser?.registrationType === 'PJ') && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="glass-panel" style={{ padding: '24px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 900, textTransform: 'uppercase', marginBottom: '10px' }}>
+              🛒 Integração de Marketplace & Vendas por API
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+              Como fornecedor corporativo (PJ/CNPJ), você pode exibir e gerenciar suas vendas de produtos integradas diretamente em seu cartão compartilhado do GIG BR.
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+              <div style={{ padding: '16px', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: '#f8fafc' }}>
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '6px' }}>Status da API de Catálogo</h4>
+                <p style={{ fontSize: '0.8rem', color: '#059669', fontWeight: 700, margin: 0 }}>
+                  ● {currentUser?.marketplace_url ? 'CONECTADO E ATIVO' : 'AGUARDANDO INTEGRAÇÃO'}
+                </p>
+                {currentUser?.marketplace_url && (
+                  <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginTop: '6px', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                    {currentUser.marketplace_url}
+                  </span>
+                )}
+              </div>
+              <div style={{ padding: '16px', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: '#f8fafc' }}>
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '6px' }}>Visualizações do Catálogo</h4>
+                <p style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--color-blue)', margin: 0 }}>
+                  1.240 cliques
+                </p>
+                <span style={{ fontSize: '0.7rem', color: '#64748b', display: 'block', marginTop: '4px' }}>Cliques no botão "Marketplace" do seu card.</span>
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
+              <h4 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '14px' }}>📦 Catálogo de Vendas Externo (Simulação)</h4>
+              {currentUser?.marketplace_url ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ padding: '12px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '0.8rem', color: '#1e3a8a' }}>
+                    💡 Exibindo produtos integrados a partir do endereço configurado: <strong>{currentUser.marketplace_url}</strong>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '14px', marginTop: '10px' }}>
+                    {[
+                      { name: 'Console Digital de Som 32ch', price: 'R$ 14.500,00', stock: '2 unid' },
+                      { name: 'Cabo XLR Profissional 10m', price: 'R$ 89,90', stock: '15 unid' },
+                      { name: 'Microfone Dinâmico Supercardioide', price: 'R$ 650,00', stock: '8 unid' },
+                      { name: 'Case Rígido para Cabos', price: 'R$ 420,00', stock: '5 unid' }
+                    ].map((item, idx) => (
+                      <div key={idx} style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '12px', backgroundColor: '#ffffff', textAlign: 'center' }}>
+                        <div style={{ width: '100%', height: '80px', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', borderRadius: '4px', marginBottom: '8px' }}>
+                          📦
+                        </div>
+                        <strong style={{ display: 'block', fontSize: '0.8rem', height: '36px', overflow: 'hidden' }}>{item.name}</strong>
+                        <span style={{ display: 'block', fontSize: '0.9rem', color: '#2563eb', fontWeight: 800, margin: '6px 0' }}>{item.price}</span>
+                        <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Estoque: {item.stock}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding: '24px', backgroundColor: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', textAlign: 'center', color: '#64748b' }}>
+                  <span style={{ fontSize: '2rem' }}>🔌</span>
+                  <h5 style={{ fontSize: '0.9rem', fontWeight: 700, margin: '8px 0 4px 0' }}>Nenhum Catálogo Conectado</h5>
+                  <p style={{ fontSize: '0.75rem', maxWidth: '380px', margin: '0 auto 12px auto' }}>Vá em "Meu Perfil" e cadastre o link do seu Catálogo de Vendas ou link do MercadoLivre/Loja para integrar seus produtos.</p>
+                  <button onClick={() => setDashboardTab('meu_perfil')} className="btn btn-secondary btn-sm">Configurar Link</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Direct email proposal modal */}
       {proposingContractor && (
         <div style={{
@@ -3994,6 +4121,57 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                   >
                     {BRAZILIAN_STATES.map(st => <option key={st.code} value={st.code}>{st.code}</option>)}
                   </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Nível de Acesso (Permissão)</label>
+                  <select 
+                    className="form-input"
+                    value={editingUser.role || 'freelancer'}
+                    onChange={(evt) => setEditingUser({ ...editingUser, role: evt.target.value })}
+                  >
+                    <option value="freelancer">Prestador (Freelancer)</option>
+                    <option value="employer">Contratante (Produtor)</option>
+                    <option value="admin">Administrador</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Homologação</label>
+                  <select 
+                    className="form-input"
+                    value={editingUser.is_vetted ? "1" : "0"}
+                    onChange={(evt) => setEditingUser({ ...editingUser, is_vetted: parseInt(evt.target.value) })}
+                  >
+                    <option value="1">Homologado (Ativo)</option>
+                    <option value="0">Pendente (Inativo)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Tipo PIX</label>
+                  <select 
+                    className="form-input"
+                    value={editingUser.pixType || 'CPF'}
+                    onChange={(evt) => setEditingUser({ ...editingUser, pixType: evt.target.value })}
+                  >
+                    <option value="CPF">CPF</option>
+                    <option value="CNPJ">CNPJ</option>
+                    <option value="Email">E-mail</option>
+                    <option value="Telefone">Celular</option>
+                    <option value="Chave Aleatoria">Chave Aleatória</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Chave PIX</label>
+                  <input 
+                    type="text" className="form-input"
+                    value={editingUser.pixKey || ''}
+                    onChange={(evt) => setEditingUser({ ...editingUser, pixKey: evt.target.value })}
+                  />
                 </div>
               </div>
 

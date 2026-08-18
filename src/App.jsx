@@ -4,11 +4,12 @@ import InviteAuth from './components/InviteAuth';
 import DesktopDashboard from './components/DesktopDashboard';
 import PixModal from './components/PixModal';
 import PublicProfile from './components/PublicProfile';
+import PublicOpportunity from './components/PublicOpportunity';
 import dashboardBg from './assets/dashboard_bg.jpg';
 
 function MainAppContent() {
   const { currentUser, setCurrentUser } = useContext(AppContext);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('gigbr_user'));
   const [isMobileView, setIsMobileView] = useState(false);
   const [shareMode, setShareMode] = useState(null); // 'talent' or 'group'
   const [shareId, setShareId] = useState(null);
@@ -64,12 +65,16 @@ function MainAppContent() {
     const params = new URLSearchParams(window.location.search);
     const talentId = params.get('talent');
     const groupId = params.get('group');
+    const opportunityCode = params.get('opportunity');
     if (talentId) {
       setShareMode('talent');
       setShareId(talentId);
     } else if (groupId) {
       setShareMode('group');
       setShareId(groupId);
+    } else if (opportunityCode) {
+      setShareMode('opportunity');
+      setShareId(opportunityCode);
     }
 
     const handleResize = () => {
@@ -83,6 +88,18 @@ function MainAppContent() {
   }, []);
 
   if (shareMode && shareId) {
+    if (shareMode === 'opportunity') {
+      return (
+        <PublicOpportunity 
+          code={shareId} 
+          onBack={() => {
+            setShareMode(null);
+            setShareId(null);
+            window.history.replaceState({}, '', '/');
+          }} 
+        />
+      );
+    }
     return (
       <PublicProfile 
         id={shareId} 

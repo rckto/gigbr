@@ -336,8 +336,11 @@ app.post('/api/groups/:id/members', async (req, res) => {
 // 4. Opportunities API
 app.get('/api/opportunities', async (req, res) => {
   try {
-    await cleanupOpportunities();
     const opportunities = await getOpportunities();
+    if (req.query.code) {
+      const single = opportunities.find(o => o.access_code === req.query.code);
+      return res.json(single || null);
+    }
     res.json(opportunities);
   } catch (error) {
     res.status(500).json({ error: error.message });

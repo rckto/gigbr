@@ -64,8 +64,34 @@ export const AppProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   
   // Auth state for logged in profile view
-  const [currentUser, setCurrentUser] = useState(null);
-  const [userRole, setUserRole] = useState(null); // 'admin', 'employer', 'freelancer'
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('gigbr_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const [userRole, setUserRole] = useState(() => {
+    try {
+      const saved = localStorage.getItem('gigbr_role');
+      return saved || null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      if (currentUser) {
+        localStorage.setItem('gigbr_user', JSON.stringify(currentUser));
+        localStorage.setItem('gigbr_role', userRole || currentUser.role);
+      } else {
+        localStorage.removeItem('gigbr_user');
+        localStorage.removeItem('gigbr_role');
+      }
+    } catch (e) {}
+  }, [currentUser, userRole]);
 
   // PIX Modal State
   const [pixModal, setPixModal] = useState({
