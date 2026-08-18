@@ -65,6 +65,9 @@ const PublicProfile = ({ id, type, onBack }) => {
   const [proposedDate, setProposedDate] = useState('');
   const [message, setMessage] = useState('');
   const [success, setSuccess] = useState(false);
+  const [successEmail, setSuccessEmail] = useState('');
+  const [successCache, setSuccessCache] = useState('');
+  const [successRecipient, setSuccessRecipient] = useState('');
 
   useEffect(() => {
     // Fetch profile from backend Express API with origin checks and offline fallbacks
@@ -196,21 +199,16 @@ Mensagem:
       console.warn("Failed to dispatch email via API, falling back to local simulation logs.");
     }
     
-    // Simulate sending email to worker
-    alert(
-      `📩 Proposta Enviada com Sucesso!\n\n` +
-      `Uma solicitação de contato profissional foi encaminhada para a caixa postal:\n` +
-      `📧 ${emailTo}\n\n` +
-      `A proposta foi salva no registro de e-mails enviados (emails_sent.log) e no console do servidor.`
-    );
-
+    setSuccessRecipient(emailTo);
+    setSuccessEmail(senderEmail);
+    setSuccessCache(proposedCache);
     setSuccess(true);
+    
     setSenderName('');
     setSenderEmail('');
     setProposedCache('');
     setProposedDate('');
     setMessage('');
-    setTimeout(() => setSuccess(false), 5000);
   };
 
   if (loading) {
@@ -472,88 +470,133 @@ Mensagem:
 
         {/* Right Side: Propose contact form */}
         <div style={{ padding: '40px 32px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <h3 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            📩 Enviar Proposta de Contato
-          </h3>
-          <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '24px' }}>
-            Proponha um show ou envie seus contatos corporativos diretamente para este profissional/grupo.
-          </p>
+          {success ? (
+            <div style={{ animation: 'fadeIn 0.3s ease-out', textAlign: 'center' }}>
+              <span style={{ fontSize: '3rem', display: 'block', marginBottom: '16px' }}>📩</span>
+              <h3 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 8px 0', color: '#166534' }}>
+                Proposta Enviada com Sucesso!
+              </h3>
+              <p style={{ fontSize: '0.8rem', color: '#475569', marginBottom: '24px', lineHeight: '1.5' }}>
+                Uma solicitação de contato profissional foi encaminhada para a caixa postal cadastrada deste perfil.
+              </p>
+              
+              <div style={{
+                backgroundColor: '#ffffff',
+                border: '2px dashed #a7f3d0',
+                borderRadius: '8px',
+                padding: '20px',
+                textAlign: 'left',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                color: '#1e293b',
+                fontSize: '0.8rem',
+                marginBottom: '24px'
+              }}>
+                <div>
+                  <strong style={{ display: 'block', fontSize: '0.65rem', textTransform: 'uppercase', color: '#64748b', marginBottom: '2px' }}>E-mail de Destino</strong>
+                  <span style={{ fontWeight: 700, fontFamily: 'monospace', fontSize: '0.85rem', color: '#0f172a' }}>{successRecipient}</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <strong style={{ display: 'block', fontSize: '0.65rem', textTransform: 'uppercase', color: '#64748b', marginBottom: '2px' }}>Seu E-mail (Remetente)</strong>
+                    <span style={{ fontWeight: 700 }}>{successEmail}</span>
+                  </div>
+                  <div>
+                    <strong style={{ display: 'block', fontSize: '0.65rem', textTransform: 'uppercase', color: '#64748b', marginBottom: '2px' }}>Cachê Oferecido</strong>
+                    <span style={{ fontWeight: 700, color: '#047857' }}>R$ {parseFloat(successCache || 0).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
 
-          {success && (
-            <div style={{ backgroundColor: '#ecfdf5', border: '1px solid #10b981', color: '#047857', padding: '12px 16px', borderRadius: 'var(--radius-sm)', marginBottom: '20px', fontSize: '0.85rem', fontWeight: 600 }}>
-              ✓ Solicitação enviada! O profissional responderá no e-mail cadastrado.
+              <button 
+                onClick={() => setSuccess(false)} 
+                className="btn btn-secondary" 
+                style={{ width: '100%', padding: '12px' }}
+              >
+                Enviar Outra Proposta
+              </button>
             </div>
+          ) : (
+            <>
+              <h3 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                📩 Enviar Proposta de Contato
+              </h3>
+              <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '24px' }}>
+                Proponha um show ou envie seus contatos corporativos diretamente para este profissional/grupo.
+              </p>
+
+              <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Seu Nome</label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      placeholder="Seu nome ou Produtora" 
+                      required
+                      value={senderName}
+                      onChange={(e) => setSenderName(e.target.value)}
+                      style={{ fontSize: '0.8rem', padding: '10px' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Seu E-mail</label>
+                    <input 
+                      type="email" 
+                      className="form-input" 
+                      placeholder="exemplo@produtora.com" 
+                      required
+                      value={senderEmail}
+                      onChange={(e) => setSenderEmail(e.target.value)}
+                      style={{ fontSize: '0.8rem', padding: '10px' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Cachê Proposto (R$)</label>
+                    <input 
+                      type="number" 
+                      className="form-input" 
+                      placeholder="Valor Cachê" 
+                      required
+                      value={proposedCache}
+                      onChange={(e) => setProposedCache(e.target.value)}
+                      style={{ fontSize: '0.8rem', padding: '10px' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Data Proposta</label>
+                    <input 
+                      type="date" 
+                      className="form-input" 
+                      value={proposedDate}
+                      onChange={(e) => setProposedDate(e.target.value)}
+                      style={{ fontSize: '0.8rem', padding: '10px' }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Mensagem / Detalhes do Show</label>
+                  <textarea 
+                    className="form-input" 
+                    rows="4" 
+                    placeholder="Descreva o local do show, equipamentos de som fornecidos e horários previstos de passagem de som..."
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    style={{ fontSize: '0.8rem', padding: '10px', resize: 'none', fontFamily: 'inherit' }}
+                  />
+                </div>
+
+                <button type="submit" className="btn btn-primary" style={{ padding: '12px', fontSize: '0.9rem', width: '100%', borderRadius: 'var(--radius-sm)' }}>
+                  Enviar Proposta Profissional
+                </button>
+              </form>
+            </>
           )}
-
-          <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Seu Nome</label>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  placeholder="Seu nome ou Produtora" 
-                  required
-                  value={senderName}
-                  onChange={(e) => setSenderName(e.target.value)}
-                  style={{ fontSize: '0.8rem', padding: '10px' }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Seu E-mail</label>
-                <input 
-                  type="email" 
-                  className="form-input" 
-                  placeholder="exemplo@produtora.com" 
-                  required
-                  value={senderEmail}
-                  onChange={(e) => setSenderEmail(e.target.value)}
-                  style={{ fontSize: '0.8rem', padding: '10px' }}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Cachê Proposto (R$)</label>
-                <input 
-                  type="number" 
-                  className="form-input" 
-                  placeholder="Valor Cachê" 
-                  required
-                  value={proposedCache}
-                  onChange={(e) => setProposedCache(e.target.value)}
-                  style={{ fontSize: '0.8rem', padding: '10px' }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Data Proposta</label>
-                <input 
-                  type="date" 
-                  className="form-input" 
-                  value={proposedDate}
-                  onChange={(e) => setProposedDate(e.target.value)}
-                  style={{ fontSize: '0.8rem', padding: '10px' }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Mensagem / Detalhes do Show</label>
-              <textarea 
-                className="form-input" 
-                rows="4" 
-                placeholder="Descreva o local do show, equipamentos de som fornecidos e horários previstos de passagem de som..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                style={{ fontSize: '0.8rem', padding: '10px', resize: 'none', fontFamily: 'inherit' }}
-              />
-            </div>
-
-            <button type="submit" className="btn btn-primary" style={{ padding: '12px', fontSize: '0.9rem', width: '100%', borderRadius: 'var(--radius-sm)' }}>
-              Enviar Proposta Profissional
-            </button>
-          </form>
 
           <GoogleAdSlot slotId="profile-bottom-ad" height="90px" />
         </div>

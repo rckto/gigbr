@@ -614,6 +614,78 @@ if ($resource === 'shifts') {
     }
 }
 
+function send_smtp_email($to, $subject, $body, $fromName = "GIG BR") {
+    $host = "smtp.gmail.com";
+    $port = 465;
+    $username = "studiodwdigital@gmail.com";
+    $password = "C3cc4t0_0510@g10rg1";
+    
+    // Clean/strip quotes from password if they exist
+    $password = trim($password, '"\'');
+
+    $socket = @fsockopen("ssl://" . $host, $port, $errno, $errstr, 15);
+    if (!$socket) {
+        error_log("SMTP connection failed: $errstr ($errno)");
+        return false;
+    }
+
+    $response = "";
+    $read_func = function($socket) {
+        $res = "";
+        while ($str = fgets($socket, 515)) {
+            $res .= $str;
+            if (substr($str, 3, 1) == " ") {
+                break;
+            }
+        }
+        return $res;
+    };
+
+    $read_func($socket); // Read banner
+
+    fwrite($socket, "EHLO " . ($_SERVER['SERVER_NAME'] ?? 'localhost') . "\r\n");
+    $read_func($socket);
+
+    fwrite($socket, "AUTH LOGIN\r\n");
+    $read_func($socket);
+
+    fwrite($socket, base64_encode($username) . "\r\n");
+    $read_func($socket);
+
+    fwrite($socket, base64_encode($password) . "\r\n");
+    $auth_response = $read_func($socket);
+    if (strpos($auth_response, "235") === false) {
+        error_log("SMTP authentication failed: " . $auth_response);
+        fclose($socket);
+        return false;
+    }
+
+    fwrite($socket, "MAIL FROM: <" . $username . ">\r\n");
+    $read_func($socket);
+
+    fwrite($socket, "RCPT TO: <" . $to . ">\r\n");
+    $read_func($socket);
+
+    fwrite($socket, "DATA\r\n");
+    $read_func($socket);
+
+    $headers = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-type: text/plain; charset=utf-8\r\n";
+    $headers .= "To: <" . $to . ">\r\n";
+    $headers .= "From: " . $fromName . " <" . $username . ">\r\n";
+    $headers .= "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=\r\n";
+    $headers .= "Date: " . date("r") . "\r\n";
+
+    $message = $headers . "\r\n" . $body . "\r\n.\r\n";
+    fwrite($socket, $message);
+    $data_response = $read_func($socket);
+
+    fwrite($socket, "QUIT\r\n");
+    fclose($socket);
+
+    return strpos($data_response, "250") !== false;
+}
+
 if ($resource === 'emails' && $id === 'send' && $request_method === 'POST') {
     $sender = $input['sender'] ?? 'sistema@gigbr.com.br';
     $recipient = $input['recipient'] ?? 'desconhecido@gigbr.com.br';
@@ -637,7 +709,10 @@ if ($resource === 'emails' && $id === 'send' && $request_method === 'POST') {
                "X-Mailer: PHP/" . phpversion();
     @mail($recipient, $subject, $body, $headers);
 
-    echo json_encode(["success" => true, "message" => "Email logged and dispatched successfully."]);
+    // Try real Gmail SMTP dispatch
+    $smtp_success = send_smtp_email($recipient, $subject, $body, "GIG BR - " . $sender);
+
+    echo json_encode(["success" => true, "message" => "Email logged and processed.", "smtp_sent" => $smtp_success]);
     exit;
 }
 

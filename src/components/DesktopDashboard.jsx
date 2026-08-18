@@ -414,6 +414,7 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
   const [employerSuccess, setEmployerSuccess] = useState(false);
   const [hiringContractor, setHiringContractor] = useState(null);
   const [proposingContractor, setProposingContractor] = useState(null);
+  const [proposeSuccessDetails, setProposeSuccessDetails] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
   const [editingGroup, setEditingGroup] = useState(null);
   const [editingOpportunity, setEditingOpportunity] = useState(null);
@@ -3745,58 +3746,112 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
             color: 'var(--text-main)'
           }}>
-            <div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-main)' }}>📧 Enviar Proposta por E-mail</h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                Envie termos de trabalho diretamente para o endereço cadastrado do profissional: <br/>
-                <strong style={{ color: 'var(--color-blue)' }}>{proposingContractor.email}</strong>
-              </p>
-            </div>
+            {proposeSuccessDetails ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', animation: 'fadeIn 0.3s ease-out' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '2.25rem' }}>📩</span>
+                  <div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>Proposta Enviada!</h3>
+                    <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                      A proposta foi encaminhada com sucesso para o profissional.
+                    </p>
+                  </div>
+                </div>
+                
+                <div style={{
+                  backgroundColor: '#f0fdf4',
+                  border: '1px solid #bbf7d0',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '14px',
+                  color: '#166534',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  fontSize: '0.8rem'
+                }}>
+                  <div>
+                    <strong style={{ display: 'block', fontSize: '0.65rem', textTransform: 'uppercase', color: '#15803d', marginBottom: '2px' }}>Destinatário (E-mail)</strong>
+                    <span style={{ fontWeight: 700, fontFamily: 'monospace' }}>{proposeSuccessDetails.recipient}</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div>
+                      <strong style={{ display: 'block', fontSize: '0.65rem', textTransform: 'uppercase', color: '#15803d', marginBottom: '2px' }}>Cachê Proposto</strong>
+                      <span style={{ fontWeight: 700 }}>R$ {proposeSuccessDetails.cache}</span>
+                    </div>
+                    <div>
+                      <strong style={{ display: 'block', fontSize: '0.65rem', textTransform: 'uppercase', color: '#15803d', marginBottom: '2px' }}>Data da Apresentação</strong>
+                      <span style={{ fontWeight: 700 }}>{proposeSuccessDetails.date}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <strong style={{ display: 'block', fontSize: '0.65rem', textTransform: 'uppercase', color: '#15803d', marginBottom: '2px' }}>Mensagem enviada</strong>
+                    <span style={{ fontStyle: 'italic' }}>"{proposeSuccessDetails.message}"</span>
+                  </div>
+                </div>
 
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              const form = e.target;
-              const cache = form.elements.proposalCache.value;
-              const date = form.elements.proposalDate.value;
-              const message = form.elements.proposalMessage.value;
-              
-              const targetEmail = proposingContractor.email || `${proposingContractor.name.toLowerCase().replace(/\s+/g, '.')}@gmail.com`;
-              const emailSubject = `Nova Proposta de GIG - de ${currentUser?.name || 'Contratante GIG BR'}`;
-              const emailBody = `Olá ${proposingContractor.name},\n\n` +
-                                `Você recebeu uma proposta de gig através da plataforma GIG BR:\n` +
-                                `Remetente: ${currentUser?.name || 'Contratante'} (${currentUser?.email || 'sistema@gigbr.com.br'})\n` +
-                                `Cachê Oferecido: R$ ${parseFloat(cache).toFixed(2)}\n` +
-                                `Data Proposta: ${date || 'A definir'}\n\n` +
-                                `Mensagem:\n` +
-                                `"${message}"\n\n` +
-                                `Acesse o dashboard no GIG BR para confirmar e responder a esta proposta.`;
+                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                  <button 
+                    onClick={() => {
+                      setProposeSuccessDetails(null);
+                      setProposingContractor(null);
+                    }} 
+                    className="btn btn-primary" 
+                    style={{ flex: 1, padding: '10px' }}
+                  >
+                    Fechar Janela
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-main)' }}>📧 Enviar Proposta por E-mail</h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    Envie termos de trabalho diretamente para o endereço cadastrado do profissional: <br/>
+                    <strong style={{ color: 'var(--color-blue)' }}>{proposingContractor.email}</strong>
+                  </p>
+                </div>
 
-              try {
-                await fetch(`${apiOrigin}/api/emails/send`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    sender: currentUser?.email || 'sistema@gigbr.com.br',
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  const form = e.target;
+                  const cache = form.elements.proposalCache.value;
+                  const date = form.elements.proposalDate.value;
+                  const message = form.elements.proposalMessage.value;
+                  
+                  const targetEmail = proposingContractor.email || `${proposingContractor.name.toLowerCase().replace(/\s+/g, '.')}@gmail.com`;
+                  const emailSubject = `Nova Proposta de GIG - de ${currentUser?.name || 'Contratante GIG BR'}`;
+                  const emailBody = `Olá ${proposingContractor.name},\n\n` +
+                                    `Você recebeu uma proposta de gig através da plataforma GIG BR:\n` +
+                                    `Remetente: ${currentUser?.name || 'Contratante'} (${currentUser?.email || 'sistema@gigbr.com.br'})\n` +
+                                    `Cachê Oferecido: R$ ${parseFloat(cache).toFixed(2)}\n` +
+                                    `Data Proposta: ${date || 'A definir'}\n\n` +
+                                    `Mensagem:\n` +
+                                    `"${message}"\n\n` +
+                                    `Acesse o dashboard no GIG BR para confirmar e responder a esta proposta.`;
+
+                  try {
+                    await fetch(`${apiOrigin}/api/emails/send`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        sender: currentUser?.email || 'sistema@gigbr.com.br',
+                        recipient: targetEmail,
+                        subject: emailSubject,
+                        body: emailBody
+                      })
+                    });
+                  } catch (err) {
+                    console.warn("Failed to dispatch email via API, falling back to local simulation logs.");
+                  }
+
+                  setProposeSuccessDetails({
                     recipient: targetEmail,
-                    subject: emailSubject,
-                    body: emailBody
-                  })
-                });
-              } catch (err) {
-                console.warn("Failed to dispatch email via API, falling back to local simulation logs.");
-              }
-
-              alert(
-                `📩 Proposta enviada com sucesso!\n\n` +
-                `Uma solicitação de contato foi enviada para:\n` +
-                `📧 ${targetEmail}\n\n` +
-                `Detalhes:\n` +
-                `- Cachê Proposto: R$ ${parseFloat(cache).toFixed(2)}\n` +
-                `- Data Prevista: ${date || 'A definir'}\n` +
-                `- Mensagem: "${message}"`
-              );
-              setProposingContractor(null);
-            }} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    cache: parseFloat(cache).toFixed(2),
+                    date: date || 'A definir',
+                    message: message
+                  });
+                }} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div>
@@ -3853,9 +3908,11 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
               </div>
 
             </form>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </div>
+    </div>
+  )}
 
       {/* Mobile Bottom Navigation Bar */}
       <div className="mobile-bottom-nav">
