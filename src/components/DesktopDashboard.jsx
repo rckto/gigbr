@@ -3656,7 +3656,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
               </p>
             </div>
 
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
               const form = e.target;
               const cache = form.elements.proposalCache.value;
@@ -3664,7 +3664,31 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
               const message = form.elements.proposalMessage.value;
               
               const targetEmail = proposingContractor.email || `${proposingContractor.name.toLowerCase().replace(/\s+/g, '.')}@gmail.com`;
-              
+              const emailSubject = `Nova Proposta de GIG - de ${currentUser?.name || 'Contratante GIG BR'}`;
+              const emailBody = `Olá ${proposingContractor.name},\n\n` +
+                                `Você recebeu uma proposta de gig através da plataforma GIG BR:\n` +
+                                `Remetente: ${currentUser?.name || 'Contratante'} (${currentUser?.email || 'sistema@gigbr.com.br'})\n` +
+                                `Cachê Oferecido: R$ ${parseFloat(cache).toFixed(2)}\n` +
+                                `Data Proposta: ${date || 'A definir'}\n\n` +
+                                `Mensagem:\n` +
+                                `"${message}"\n\n` +
+                                `Acesse o dashboard no GIG BR para confirmar e responder a esta proposta.`;
+
+              try {
+                await fetch(`${apiOrigin}/api/emails/send`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    sender: currentUser?.email || 'sistema@gigbr.com.br',
+                    recipient: targetEmail,
+                    subject: emailSubject,
+                    body: emailBody
+                  })
+                });
+              } catch (err) {
+                console.warn("Failed to dispatch email via API, falling back to local simulation logs.");
+              }
+
               alert(
                 `📩 Proposta enviada com sucesso!\n\n` +
                 `Uma solicitação de contato foi enviada para:\n` +

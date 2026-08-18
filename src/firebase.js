@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 // Public Firebase config. Using a default sandbox config if not configured.
+// Note: Google OAuth client secret for the auth console is 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
 const firebaseConfig = {
   apiKey: "AIzaSyAs-eNvyProjectSampleKeyGoIAGigBR",
   authDomain: "event-uk-brazil.firebaseapp.com",

@@ -385,6 +385,19 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
       return;
     }
 
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(regForm.email)) {
+      setError('Por favor, informe um endereço de e-mail válido.');
+      return;
+    }
+
+    // Password strength validation
+    if (!regForm.password || regForm.password.length < 6) {
+      setError('A senha de acesso deve conter pelo menos 6 caracteres.');
+      return;
+    }
+
     if (!regForm.pixKey) {
       setError('Por favor, cadastre uma chave PIX individual para recebimentos.');
       return;
