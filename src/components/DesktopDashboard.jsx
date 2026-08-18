@@ -4096,8 +4096,11 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                   <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Homologação</label>
                   <select 
                     className="form-input"
-                    value={editingUser.is_vetted ? "1" : "0"}
-                    onChange={(evt) => setEditingUser({ ...editingUser, is_vetted: parseInt(evt.target.value) })}
+                    value={(editingUser.is_vetted !== undefined ? editingUser.is_vetted : (editingUser.isVetted ? 1 : 0)) ? "1" : "0"}
+                    onChange={(evt) => {
+                      const val = parseInt(evt.target.value);
+                      setEditingUser({ ...editingUser, is_vetted: val, isVetted: val === 1 });
+                    }}
                   >
                     <option value="1">Homologado (Ativo)</option>
                     <option value="0">Pendente (Inativo)</option>
@@ -4172,7 +4175,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                 <input 
                   type="url" className="form-input"
                   value={editingUser.marketplace_url || editingUser.marketplaceUrl || ''}
-                  onChange={(evt) => setEditingUser({ ...editingUser, marketplace_url: evt.target.value })}
+                  onChange={(evt) => setEditingUser({ ...editingUser, marketplace_url: evt.target.value, marketplaceUrl: evt.target.value })}
                   placeholder="Link do catálogo de vendas externo"
                 />
               </div>
@@ -4182,7 +4185,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                 <input 
                   type="url" className="form-input"
                   value={editingUser.website_url || editingUser.websiteUrl || ''}
-                  onChange={(evt) => setEditingUser({ ...editingUser, website_url: evt.target.value })}
+                  onChange={(evt) => setEditingUser({ ...editingUser, website_url: evt.target.value, websiteUrl: evt.target.value })}
                   placeholder="https://instagram.com/perfil ou site oficial"
                 />
               </div>

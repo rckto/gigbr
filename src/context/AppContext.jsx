@@ -135,6 +135,35 @@ export const AppProvider = ({ children }) => {
     { id: 'group-1', name: 'Banda Samba & Swing BR', category: 'Músicos', description: 'Grupo musical especializado em samba de roda, bossa nova e ritmos brasileiros para recepções corporativas e casamentos.', members: ['cont-3', 'cont-8'], city: 'São Paulo - SP', state: 'SP' }
   ]);
 
+  const normalizeUserCase = (u) => {
+    if (!u) return u;
+    const normalized = { ...u };
+    normalized.registrationType = u.registrationType || u.registration_type || 'PF';
+    normalized.registration_type = normalized.registrationType;
+    if (u.is_vetted !== undefined) {
+      normalized.isVetted = u.is_vetted == 1 || u.is_vetted === true;
+      normalized.is_vetted = normalized.isVetted ? 1 : 0;
+    } else if (u.isVetted !== undefined) {
+      normalized.isVetted = !!u.isVetted;
+      normalized.is_vetted = normalized.isVetted ? 1 : 0;
+    } else {
+      normalized.isVetted = true;
+      normalized.is_vetted = 1;
+    }
+    normalized.pixKey = u.pixKey || u.pix_key || '';
+    normalized.pix_key = normalized.pixKey;
+    normalized.pixType = u.pixType || u.pix_type || 'CPF';
+    normalized.pix_type = normalized.pixType;
+    normalized.marketplaceUrl = u.marketplaceUrl || u.marketplace_url || '';
+    normalized.marketplace_url = normalized.marketplaceUrl;
+    normalized.websiteUrl = u.websiteUrl || u.website_url || '';
+    normalized.website_url = normalized.websiteUrl;
+    normalized.companyName = u.companyName || u.name || '';
+    normalized.completedShifts = parseInt(u.completedShifts !== undefined ? u.completedShifts : (u.completed_shifts || 0));
+    normalized.completed_shifts = normalized.completedShifts;
+    return normalized;
+  };
+
   // Fetch initial data from Backend server API with local memory fallback
   const refreshAllData = async () => {
     try {
@@ -151,43 +180,13 @@ export const AppProvider = ({ children }) => {
         // Filter contractors (freelancers)
         const freelancers = allUsers.filter(u => u.role === 'freelancer');
         if (freelancers.length > 0) {
-          setContractors(freelancers.map(u => ({
-            id: u.id,
-            name: u.name,
-            role: u.role || 'Prestador',
-            category: u.category || 'Músicos',
-            rating: parseFloat(u.rating || 5.0),
-            completedShifts: parseInt(u.completed_shifts || 0),
-            cpf: u.cpf,
-            cnpj: u.cnpj,
-            pixKey: u.pixKey || u.pix_key || u.cpf || u.cnpj || '',
-            pixType: u.pixType || u.pix_type || 'CPF',
-            city: u.city,
-            state: u.state,
-            avatar: u.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face',
-            email: u.email,
-            phone: u.phone,
-            omb: u.omb,
-            drt: u.drt,
-            bio: u.bio,
-            isVetted: !!u.is_vetted
-          })));
+          setContractors(freelancers.map(normalizeUserCase));
         }
         
         // Filter employers
         const emps = allUsers.filter(u => u.role === 'employer');
         if (emps.length > 0) {
-          setEmployers(emps.map(u => ({
-            id: u.id,
-            name: u.name,
-            companyName: u.companyName || u.name,
-            cnpj: u.cnpj || '',
-            city: u.city || 'São Paulo',
-            state: u.state || 'SP',
-            hiringMode: u.hiringMode || 'NF',
-            thirdPartyInvoice: u.thirdPartyInvoice || 'OWN_ONLY',
-            bio: u.bio || ''
-          })));
+          setEmployers(emps.map(normalizeUserCase));
         }
         try {
           localStorage.setItem('gigbr_users', JSON.stringify(allUsers));
@@ -636,9 +635,9 @@ export const AppProvider = ({ children }) => {
       console.warn("API offline. Updating contractor in local state.");
     }
 
-    setContractors(prev => prev.map(c => c.id === id ? { ...c, ...newData } : c));
+    setContractors(prev => prev.map(c => c.id === id ? normalizeUserCase({ ...c, ...newData }) : c));
     if (currentUser && currentUser.id === id) {
-      setCurrentUser(prev => ({ ...prev, ...newData }));
+      setCurrentUser(prev => normalizeUserCase({ ...prev, ...newData }));
     }
     const name = newData.name || 'Prestador';
     addNotification('system', `Perfil do profissional "${name}" atualizado com sucesso.`, 'all');
@@ -657,9 +656,9 @@ export const AppProvider = ({ children }) => {
       console.warn("API offline. Updating employer in local state.");
     }
 
-    setEmployers(prev => prev.map(e => e.id === id ? { ...e, ...newData } : e));
+    setEmployers(prev => prev.map(e => e.id === id ? normalizeUserCase({ ...e, ...newData }) : e));
     if (currentUser && currentUser.id === id) {
-      setCurrentUser(prev => ({ ...prev, ...newData }));
+      setCurrentUser(prev => normalizeUserCase({ ...prev, ...newData }));
     }
     const name = newData.name || 'Contratante';
     addNotification('system', `Perfil do contratante "${name}" atualizado com sucesso.`, 'all');
@@ -746,8 +745,8 @@ export const AppProvider = ({ children }) => {
       }
     } catch (err) {
       console.warn("API offline or error. Updating user in local memory.", err);
-      setContractors(prev => prev.map(c => c.id === id ? { ...c, ...data } : c));
-      setEmployers(prev => prev.map(e => e.id === id ? { ...e, ...data } : e));
+      setContractors(prev => prev.map(c => c.id === id ? normalizeUserCase({ ...c, ...data }) : c));
+      setEmployers(prev => prev.map(e => e.id === id ? normalizeUserCase({ ...e, ...data }) : e));
     }
     addNotification('system', `Usuário "${data.name}" atualizado pelo administrador central.`, 'all');
   }
