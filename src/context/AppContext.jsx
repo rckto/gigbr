@@ -763,6 +763,7 @@ export const AppProvider = ({ children }) => {
         body: JSON.stringify(data)
       });
       if (res.ok) {
+        const updatedUser = await res.json();
         const finalUser = normalizeUserCase({ ...data, ...updatedUser });
         
         setContractors(prev => {
