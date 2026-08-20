@@ -755,6 +755,63 @@ export const AppProvider = ({ children }) => {
     addNotification('system', `Usuário deletado por administrador central.`, 'all');
   }
 
+  async function createUserAdmin(userData) {
+    const newUser = {
+      id: `usr-${Date.now()}`,
+      name: userData.name,
+      email: userData.email,
+      phone: userData.phone || '',
+      password: userData.password || '123456',
+      role: userData.role || 'freelancer',
+      cpf: userData.cpf || '',
+      cnpj: userData.cnpj || '',
+      registration_type: userData.role === 'freelancer' ? 'PF' : 'PJ',
+      omb: userData.omb || '',
+      drt: userData.drt || '',
+      bio: userData.bio || '',
+      avatar: userData.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face',
+      city: userData.city || 'São Paulo',
+      state: userData.state || 'SP',
+      is_vetted: userData.isVetted ? 1 : 0,
+      rating: 5.0,
+      completed_shifts: 0,
+      pix_type: userData.pixType || 'CPF',
+      pix_key: userData.pixKey || ''
+    };
+
+    try {
+      const res = await fetch(`${apiOrigin}/api/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser)
+      });
+      if (res.ok) {
+        const dbUser = await res.json();
+        const finalUser = normalizeUserCase({ ...newUser, ...dbUser });
+        if (finalUser.role === 'freelancer') {
+          setContractors(prev => [...prev, finalUser]);
+        } else {
+          setEmployers(prev => [...prev, finalUser]);
+        }
+        showToast("✓ Usuário criado com sucesso!", "success");
+        return finalUser;
+      } else {
+        const errData = await res.json();
+        throw new Error(errData.error || "Erro de validação");
+      }
+    } catch (err) {
+      console.warn("API offline or error. Storing in local state.", err);
+      const finalUser = normalizeUserCase(newUser);
+      if (finalUser.role === 'freelancer') {
+        setContractors(prev => [...prev, finalUser]);
+      } else {
+        setEmployers(prev => [...prev, finalUser]);
+      }
+      showToast("✓ Usuário criado localmente.", "success");
+      return finalUser;
+    }
+  }
+
   async function updateUserAdmin(id, data) {
     try {
       const res = await fetch(`${apiOrigin}/api/users/${id}`, {
@@ -1381,6 +1438,7 @@ export const AppProvider = ({ children }) => {
         setUserRole,
         deleteUserAdmin,
         updateUserAdmin,
+        createUserAdmin,
         deleteGroupAdmin,
         updateGroupAdmin,
         deleteOpportunityAdmin,

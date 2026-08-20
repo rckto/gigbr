@@ -146,14 +146,14 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
         }
 
         // Onboarding flow for new Google users
-        const wantToRegister = asyncConfirm(`Nenhuma conta cadastrada com o e-mail "${emailToUse}". Deseja criar um perfil rápido usando este login social?`);
+        const wantToRegister = await asyncConfirm(`Nenhuma conta cadastrada com o e-mail "${emailToUse}". Deseja criar um perfil rápido usando este login social?`);
         if (!wantToRegister) return;
 
-        const isFreelancer = asyncConfirm("Deseja se cadastrar como Prestador/Freelancer? (Clique em 'Cancelar' para se cadastrar como Produtor/Contratante)");
-        const docNumber = asyncPrompt(isFreelancer ? "Digite seu CPF (11 dígitos):" : "Digite seu CNPJ (14 dígitos):");
+        const isFreelancer = await asyncConfirm("Deseja se cadastrar como Prestador/Freelancer? (Clique em 'Cancelar' para se cadastrar como Produtor/Contratante)");
+        const docNumber = await asyncPrompt(isFreelancer ? "Digite seu CPF (11 dígitos):" : "Digite seu CNPJ (14 dígitos):");
         if (!docNumber) return;
 
-        const phoneNumber = asyncPrompt("Digite seu telefone de contato:");
+        const phoneNumber = await asyncPrompt("Digite seu telefone de contato:");
         if (!phoneNumber) return;
 
         const regPayload = {
@@ -198,7 +198,7 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
       }
     } else {
       // simulated Apple Login
-      const emailInput = asyncPrompt("Digite o e-mail da sua conta Apple para entrar ou cadastrar-se:");
+      const emailInput = await asyncPrompt("Digite o e-mail da sua conta Apple para entrar ou cadastrar-se:");
       if (!emailInput) return;
       const emailToUse = emailInput.trim().toLowerCase();
       try {
@@ -227,14 +227,14 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
           }
         }
         
-        const wantToRegister = asyncConfirm(`Nenhuma conta cadastrada com o e-mail "${emailToUse}". Deseja criar um perfil rápido usando este login social?`);
+        const wantToRegister = await asyncConfirm(`Nenhuma conta cadastrada com o e-mail "${emailToUse}". Deseja criar um perfil rápido usando este login social?`);
         if (!wantToRegister) return;
-        const isFreelancer = asyncConfirm("Deseja se cadastrar como Prestador/Freelancer? (Clique em 'Cancelar' para se cadastrar como Produtor/Contratante)");
-        const fullName = asyncPrompt("Digite seu nome completo / razão social:");
+        const isFreelancer = await asyncConfirm("Deseja se cadastrar como Prestador/Freelancer? (Clique em 'Cancelar' para se cadastrar como Produtor/Contratante)");
+        const fullName = await asyncPrompt("Digite seu nome completo / razão social:");
         if (!fullName) return;
-        const docNumber = asyncPrompt(isFreelancer ? "Digite seu CPF (11 dígitos):" : "Digite seu CNPJ (14 dígitos):");
+        const docNumber = await asyncPrompt(isFreelancer ? "Digite seu CPF (11 dígitos):" : "Digite seu CNPJ (14 dígitos):");
         if (!docNumber) return;
-        const phoneNumber = asyncPrompt("Digite seu telefone de contato:");
+        const phoneNumber = await asyncPrompt("Digite seu telefone de contato:");
         if (!phoneNumber) return;
         
         const regPayload = {

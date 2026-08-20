@@ -27,7 +27,8 @@ const MobileSimulator = ({ isNative = false }) => {
     getDistanceInKm,
     updateContractor,
     t,
-    language
+    language,
+    showToast
   } = useContext(AppContext);
 
   // Exactly 4 Tabs in the mobile simulator as requested:
@@ -246,7 +247,7 @@ const MobileSimulator = ({ isNative = false }) => {
                         const file = e.target.files[0];
                         if (file) {
                           if (file.size > 2 * 1024 * 1024) {
-                            alert("Erro: O tamanho máximo do arquivo é de 2MB.");
+                            showToast("Erro: O tamanho máximo do arquivo é de 2MB.", "error");
                             e.target.value = "";
                             return;
                           }
@@ -437,7 +438,7 @@ const MobileSimulator = ({ isNative = false }) => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '6px', marginTop: '4px', fontSize: '0.65rem' }}>
                       <span style={{ fontWeight: 700 }}>Cache: {job.payment}</span>
                       <button 
-                        onClick={() => alert(`Candidatura enviada para "${job.title}". Distância calculada: ${job.distance} km.`)}
+                        onClick={() => showToast(`Candidatura enviada para "${job.title}". Distância calculada: ${job.distance} km.`, "success")}
                         className="btn btn-primary btn-sm"
                         style={{ padding: '3px 8px', fontSize: '0.65rem' }}
                       >

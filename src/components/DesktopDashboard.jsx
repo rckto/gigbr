@@ -798,7 +798,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
   };
 
   const handleEventDelete = async (eventId) => {
-    if (!asyncConfirm("⚠️ Deseja realmente excluir este show/evento? Esta ação é irreversível e excluirá todo o histórico associado.")) {
+    if (!await asyncConfirm("⚠️ Deseja realmente excluir este show/evento? Esta ação é irreversível e excluirá todo o histórico associado.")) {
       return;
     }
 
@@ -1302,7 +1302,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
         <button 
           type="button" 
           onClick={async () => {
-            const confirmDelete = asyncConfirm("⚠️ ATENÇÃO: Tem certeza absoluta que deseja excluir sua conta permanentemente? Esta ação não pode ser desfeita!");
+            const confirmDelete = await asyncConfirm("⚠️ ATENÇÃO: Tem certeza absoluta que deseja excluir sua conta permanentemente? Esta ação não pode ser desfeita!");
             if (confirmDelete) {
               try {
                 await deleteUserAdmin(currentUser.id);
@@ -3336,8 +3336,8 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                             Editar
                           </button>
                           <button 
-                            onClick={() => {
-                              if (asyncConfirm(`Deseja realmente deletar o prestador ${c.name}?`)) {
+                            onClick={async () => {
+                              if (await asyncConfirm(`Deseja realmente deletar o prestador ${c.name}?`)) {
                                 deleteUserAdmin(c.id);
                               }
                             }}
@@ -3382,8 +3382,8 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                             Editar
                           </button>
                           <button 
-                            onClick={() => {
-                              if (asyncConfirm(`Deseja realmente deletar a produtora ${e.companyName}?`)) {
+                            onClick={async () => {
+                              if (await asyncConfirm(`Deseja realmente deletar a produtora ${e.companyName}?`)) {
                                 deleteUserAdmin(e.id);
                               }
                             }}
@@ -3444,8 +3444,8 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                               Editar
                             </button>
                             <button 
-                              onClick={() => {
-                                if (asyncConfirm(`Deseja realmente deletar o grupo ${g.name}?`)) {
+                              onClick={async () => {
+                                if (await asyncConfirm(`Deseja realmente deletar o grupo ${g.name}?`)) {
                                   deleteGroupAdmin(g.id);
                                 }
                               }}
@@ -3507,8 +3507,8 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                             Editar
                           </button>
                           <button 
-                            onClick={() => {
-                              if (asyncConfirm(`Deseja realmente excluir a vaga "${opp.title}"?`)) {
+                            onClick={async () => {
+                              if (await asyncConfirm(`Deseja realmente excluir a vaga "${opp.title}"?`)) {
                                 deleteOpportunityAdmin(opp.id);
                               }
                             }}
@@ -3667,8 +3667,8 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
 
                       {todayShift.status === 'Em Andamento' && (
                         <button 
-                          onClick={() => {
-                            const hours = asyncPrompt("Confirme as horas efetivas de palco trabalhadas hoje:", todayShift.scheduledHours);
+                          onClick={async () => {
+                            const hours = await asyncPrompt("Confirme as horas efetivas de palco trabalhadas hoje:", todayShift.scheduledHours);
                             if (hours !== null) {
                               const timeNow = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
                               showToast(`Check-out realizado às ${timeNow}. Horas registradas: ${hours}h. Aguardando liberação do produtor.`, "success");
