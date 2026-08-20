@@ -422,7 +422,11 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
     userRole,
     setUserRole,
     deleteUserAdmin,
+    updateUserAdmin,
     deleteGroupAdmin,
+    updateGroupAdmin,
+    deleteOpportunityAdmin,
+    updateOpportunityAdmin,
     updateContractor,
     updateEmployer
   } = useContext(AppContext);
@@ -4155,9 +4159,9 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
           }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>🔧 Editar Usuário (Admin)</h3>
             
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
-              updateUserAdmin(editingUser.id, editingUser);
+              await updateUserAdmin(editingUser.id, editingUser);
               setEditingUser(null);
             }} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               
@@ -4370,9 +4374,9 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
           }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>🔧 Editar Grupo / Banda (Admin)</h3>
             
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
-              updateGroupAdmin(editingGroup.id, editingGroup);
+              await updateGroupAdmin(editingGroup.id, editingGroup);
               setEditingGroup(null);
             }} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               
@@ -4474,9 +4478,9 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
           }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>🔧 Editar Vaga / Oportunidade (Admin)</h3>
             
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
-              updateOpportunityAdmin(editingOpportunity.id, editingOpportunity);
+              await updateOpportunityAdmin(editingOpportunity.id, editingOpportunity);
               setEditingOpportunity(null);
             }} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               
