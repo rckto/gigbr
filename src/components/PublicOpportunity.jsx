@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { AppContext } from '../context/AppContext';
 
 export default function PublicOpportunity({ code, onBack }) {
+  const { showToast } = useContext(AppContext);
   const [subscribed, setSubscribed] = useState(() => {
     return localStorage.getItem('gigbr_newsletter_subscribed') === 'true';
   });
@@ -189,6 +191,26 @@ export default function PublicOpportunity({ code, onBack }) {
             <p style={{ margin: 0, fontSize: '0.85rem', color: '#475569', lineHeight: '1.5' }}>
               {opportunity.description || "Nenhum detalhe adicional informado para esta vaga."}
             </p>
+          </div>
+
+          <div style={{
+            backgroundColor: 'rgba(251, 191, 36, 0.1)',
+            border: '1px solid #fef3c7',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            fontSize: '0.8rem',
+            color: '#b45309',
+            lineHeight: '1.4',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '8px',
+            fontWeight: 500,
+            marginTop: '8px'
+          }}>
+            <span style={{ fontSize: '1rem', marginTop: '-2px' }}>💡</span>
+            <span>
+              <strong>Aviso para Convidados:</strong> Você está acessando apenas esta vaga específica de forma restrita. Para visualizar dezenas de outras oportunidades na sua região e candidatar-se, registre-se na plataforma.
+            </span>
           </div>
 
           <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>

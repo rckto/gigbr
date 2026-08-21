@@ -125,6 +125,19 @@ function MainAppContent() {
     return <InviteAuth onLoginSuccess={() => setIsAuthenticated(true)} />;
   }
 
+  if (currentUser?.isGuest || currentUser?.role === 'guest') {
+    return (
+      <PublicOpportunity 
+        code={currentUser.accessCode} 
+        onBack={() => {
+          setCurrentUser(null);
+          setIsAuthenticated(false);
+          window.history.replaceState({}, '', '/');
+        }} 
+      />
+    );
+  }
+
   // Unified responsive layout rendering DesktopDashboard directly for all devices (hiding phone skins)
   return (
     <div className="app-container" style={{
