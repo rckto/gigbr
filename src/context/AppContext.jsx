@@ -636,8 +636,8 @@ export const AppProvider = ({ children }) => {
 
   async function deleteEvent(id) {
     try {
-      const res = await fetch(`${apiOrigin}/api/events/${id}`, {
-        method: 'DELETE'
+      const res = await fetch(`${apiOrigin}/api/events/${id}?_method=DELETE`, {
+        method: 'POST'
       });
       if (res.ok) {
         await refreshAllData();
@@ -769,7 +769,7 @@ export const AppProvider = ({ children }) => {
   // Admin delete/edit actions (synced with DB)
   async function deleteUserAdmin(id) {
     try {
-      await fetch(`${apiOrigin}/api/users/${id}`, { method: 'DELETE' });
+      await fetch(`${apiOrigin}/api/users/${id}?_method=DELETE`, { method: 'POST' });
     } catch (err) {
       console.warn("API offline. Deleting user from local memory.");
     }
@@ -884,7 +884,7 @@ export const AppProvider = ({ children }) => {
 
   async function deleteGroupAdmin(id) {
     try {
-      await fetch(`${apiOrigin}/api/groups/${id}`, { method: 'DELETE' });
+      await fetch(`${apiOrigin}/api/groups/${id}?_method=DELETE`, { method: 'POST' });
     } catch (err) {
       console.warn("API offline. Deleting group from local memory.");
     }
@@ -908,7 +908,7 @@ export const AppProvider = ({ children }) => {
 
   async function deleteOpportunityAdmin(id) {
     try {
-      await fetch(`${apiOrigin}/api/opportunities/${id}`, { method: 'DELETE' });
+      await fetch(`${apiOrigin}/api/opportunities/${id}?_method=DELETE`, { method: 'POST' });
     } catch (err) {
       console.warn("API offline. Deleting opportunity from local memory.");
     }

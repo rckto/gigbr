@@ -457,6 +457,7 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
     setUserRole,
     deleteUserAdmin,
     updateUserAdmin,
+    createUserAdmin,
     deleteGroupAdmin,
     updateGroupAdmin,
     deleteOpportunityAdmin,
@@ -531,7 +532,24 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
   const [editingUser, setEditingUser] = useState(null);
   const [editingGroup, setEditingGroup] = useState(null);
   const [editingOpportunity, setEditingOpportunity] = useState(null);
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
+  const [newUserForm, setNewUserForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    role: 'freelancer',
+    cpf: '',
+    cnpj: '',
+    city: 'São Paulo',
+    state: 'SP',
+    pixType: 'CPF',
+    pixKey: '',
+    bio: '',
+    isVetted: true
+  });
   const [depositPIXCopied, setDepositPIXCopied] = useState(false);
+  const [crewSearchTerm, setCrewSearchTerm] = useState('');
 
   // Guest Registration States
   const [showGuestRegisterModal, setShowGuestRegisterModal] = useState(false);
@@ -3263,21 +3281,120 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                       ✓ Profissional alocado com sucesso!
                     </div>
                   )}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Selecionar Profissional (Freelancer)</label>
-                    <select 
-                      className="form-input" required
-                      value={crewForm.contractorId}
-                      onChange={(e) => setCrewForm({ ...crewForm, contractorId: e.target.value })}
+                  <div style={{ position: 'relative' }}>
+                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Buscar Profissional (Freelancer)</label>
+                    <input 
+                      type="text" 
+                      className="form-input"
+                      placeholder="Busque por nome, sobrenome ou e-mail..."
+                      value={crewSearchTerm}
+                      onChange={(e) => setCrewSearchTerm(e.target.value)}
                       style={{ fontSize: '0.8rem', padding: '8px', backgroundColor: '#ffffff', color: 'var(--text-main)' }}
-                    >
-                      <option value="">-- Selecione o Profissional --</option>
-                      {contractors.map(c => (
-                        <option key={c.id} value={c.id}>
-                          {c.name} ({c.role} - {c.city})
-                        </option>
-                      ))}
-                    </select>
+                    />
+                    
+                    {/* Search results dropdown */}
+                    {crewSearchTerm.trim().length >= 2 && (
+                      <div style={{
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '4px',
+                        backgroundColor: '#ffffff',
+                        maxHeight: '180px',
+                        overflowY: 'auto',
+                        marginTop: '4px',
+                        position: 'absolute',
+                        width: '100%',
+                        zIndex: 10,
+                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+                      }}>
+                        {contractors.filter(c => {
+                          const term = crewSearchTerm.toLowerCase();
+                          return (c.name || '').toLowerCase().includes(term) || (c.email || '').toLowerCase().includes(term);
+                        }).map(c => (
+                          <div 
+                            key={c.id}
+                            onClick={() => {
+                              setCrewForm({ ...crewForm, contractorId: c.id });
+                              setCrewSearchTerm('');
+                            }}
+                            style={{
+                              padding: '10px 12px',
+                              cursor: 'pointer',
+                              borderBottom: '1px solid #f4f4f5',
+                              fontSize: '0.8rem',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f4f4f5'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            <div>
+                              <strong style={{ color: 'var(--text-main)' }}>{c.name}</strong>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '6px' }}>({c.role})</span>
+                            </div>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{c.email}</span>
+                          </div>
+                        ))}
+                        {contractors.filter(c => {
+                          const term = crewSearchTerm.toLowerCase();
+                          return (c.name || '').toLowerCase().includes(term) || (c.email || '').toLowerCase().includes(term);
+                        }).length === 0 && (
+                          <div style={{ padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '0.8rem', textAlign: 'center' }}>
+                            Nenhum profissional encontrado.
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Selected Contractor Visual Panel */}
+                  <div style={{ marginTop: '4px' }}>
+                    {(() => {
+                      const selectedC = contractors.find(c => c.id === crewForm.contractorId);
+                      if (selectedC) {
+                        return (
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '10px 14px',
+                            backgroundColor: '#f0fdf4',
+                            border: '1px solid #bbf7d0',
+                            borderRadius: 'var(--radius-sm)'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <img src={selectedC.avatar} alt={selectedC.name} style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
+                              <div>
+                                <strong style={{ fontSize: '0.8rem', color: '#166534', display: 'block' }}>{selectedC.name}</strong>
+                                <span style={{ display: 'block', fontSize: '0.7rem', color: '#15803d' }}>{selectedC.email} • {selectedC.role}</span>
+                              </div>
+                            </div>
+                            <button 
+                              type="button"
+                              onClick={() => setCrewForm({ ...crewForm, contractorId: '' })}
+                              style={{
+                                background: 'none', border: 'none', color: '#dc2626', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600
+                              }}
+                            >
+                              Remover
+                            </button>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div style={{
+                          padding: '10px 14px',
+                          border: '1px dashed var(--border-color)',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.75rem',
+                          color: 'var(--text-secondary)',
+                          textAlign: 'center',
+                          backgroundColor: '#fafafa'
+                        }}>
+                          ⚠️ Nenhum profissional selecionado para alocação. Busque acima.
+                        </div>
+                      );
+                    })()}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <div>
@@ -3590,9 +3707,35 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
 
           {/* Central User Directory Admin */}
           <div className="glass-panel" style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 900, textTransform: 'uppercase', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              🔧 Administrar Usuários da Plataforma
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                🔧 Administrar Usuários da Plataforma
+              </h3>
+              <button 
+                onClick={() => {
+                  setNewUserForm({
+                    name: '',
+                    email: '',
+                    phone: '',
+                    password: '',
+                    role: 'freelancer',
+                    cpf: '',
+                    cnpj: '',
+                    city: 'São Paulo',
+                    state: 'SP',
+                    pixType: 'CPF',
+                    pixKey: '',
+                    bio: '',
+                    isVetted: true
+                  });
+                  setShowCreateUserModal(true);
+                }}
+                className="btn btn-primary btn-sm"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '8px 14px' }}
+              >
+                ➕ Adicionar Novo Usuário
+              </button>
+            </div>
             
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
@@ -4996,6 +5139,176 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
               <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                 <button type="button" onClick={() => setEditingUser(null)} className="btn btn-secondary" style={{ flex: 1 }}>Cancelar</button>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Salvar Alterações</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showCreateUserModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px'
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: '500px', width: '100%', backgroundColor: '#ffffff', padding: '24px',
+            borderRadius: 'var(--radius-lg)', display: 'flex', flexDirection: 'column', gap: '14px',
+            color: 'var(--text-main)', maxHeight: '90vh', overflowY: 'auto'
+          }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>➕ Adicionar Novo Usuário (Admin)</h3>
+            
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                await createUserAdmin(newUserForm);
+                showToast("✓ Usuário criado com sucesso!", "success");
+                setShowCreateUserModal(false);
+              } catch (err) {
+                showToast("Erro ao criar usuário: " + err.message, "error");
+              }
+            }} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              
+              <div>
+                <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Nome Completo</label>
+                <input 
+                  type="text" className="form-input" required
+                  value={newUserForm.name}
+                  onChange={(evt) => setNewUserForm({ ...newUserForm, name: evt.target.value })}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>E-mail</label>
+                <input 
+                  type="email" className="form-input" required
+                  value={newUserForm.email}
+                  onChange={(evt) => setNewUserForm({ ...newUserForm, email: evt.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Senha</label>
+                  <input 
+                    type="password" className="form-input" required
+                    value={newUserForm.password}
+                    onChange={(evt) => setNewUserForm({ ...newUserForm, password: evt.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Telefone</label>
+                  <input 
+                    type="text" className="form-input"
+                    value={newUserForm.phone}
+                    onChange={(evt) => setNewUserForm({ ...newUserForm, phone: formatPhone(evt.target.value) })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Cidade</label>
+                  <input 
+                    type="text" className="form-input"
+                    value={newUserForm.city}
+                    onChange={(evt) => setNewUserForm({ ...newUserForm, city: evt.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>UF</label>
+                  <select 
+                    className="form-input"
+                    value={newUserForm.state}
+                    onChange={(evt) => setNewUserForm({ ...newUserForm, state: evt.target.value })}
+                  >
+                    {BRAZILIAN_STATES.map(st => <option key={st.code} value={st.code}>{st.code}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Nível de Acesso (Permissão)</label>
+                  <select 
+                    className="form-input"
+                    value={newUserForm.role}
+                    onChange={(evt) => setNewUserForm({ ...newUserForm, role: evt.target.value })}
+                  >
+                    <option value="freelancer">Prestador (Freelancer)</option>
+                    <option value="employer">Contratante (Produtor)</option>
+                    <option value="admin">Administrador</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Homologação</label>
+                  <select 
+                    className="form-input"
+                    value={newUserForm.isVetted ? "1" : "0"}
+                    onChange={(evt) => setNewUserForm({ ...newUserForm, isVetted: evt.target.value === "1" })}
+                  >
+                    <option value="1">Homologado (Ativo)</option>
+                    <option value="0">Pendente (Inativo)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>CPF</label>
+                  <input 
+                    type="text" className="form-input"
+                    value={newUserForm.cpf}
+                    onChange={(evt) => setNewUserForm({ ...newUserForm, cpf: formatCPF(evt.target.value) })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>CNPJ</label>
+                  <input 
+                    type="text" className="form-input"
+                    value={newUserForm.cnpj}
+                    onChange={(evt) => setNewUserForm({ ...newUserForm, cnpj: formatCNPJ(evt.target.value) })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Tipo Chave PIX</label>
+                  <select 
+                    className="form-input"
+                    value={newUserForm.pixType}
+                    onChange={(evt) => setNewUserForm({ ...newUserForm, pixType: evt.target.value })}
+                  >
+                    <option value="CPF">CPF</option>
+                    <option value="CNPJ">CNPJ</option>
+                    <option value="Email">E-mail</option>
+                    <option value="Telefone">Celular</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Chave PIX</label>
+                  <input 
+                    type="text" className="form-input"
+                    value={newUserForm.pixKey}
+                    onChange={(evt) => setNewUserForm({ ...newUserForm, pixKey: evt.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Apresentação / Bio</label>
+                <textarea 
+                  className="form-input" rows="3"
+                  value={newUserForm.bio}
+                  onChange={(evt) => setNewUserForm({ ...newUserForm, bio: evt.target.value })}
+                  style={{ fontSize: '0.8rem', resize: 'none' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button type="button" onClick={() => setShowCreateUserModal(false)} className="btn btn-secondary" style={{ flex: 1 }}>Cancelar</button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Adicionar Usuário</button>
               </div>
             </form>
           </div>

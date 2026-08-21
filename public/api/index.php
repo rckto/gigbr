@@ -185,6 +185,9 @@ try {
 }
 
 $request_method = $_SERVER['REQUEST_METHOD'];
+if ($request_method === 'POST' && isset($_GET['_method']) && strtoupper($_GET['_method']) === 'DELETE') {
+    $request_method = 'DELETE';
+}
 $request_uri = $_SERVER['REQUEST_URI'];
 
 $path = parse_url($request_uri, PHP_URL_PATH);
