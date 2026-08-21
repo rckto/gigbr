@@ -537,7 +537,8 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
     budgetLimit: '',
     description: '',
     pixKey: '',
-    crowdfundGoal: ''
+    crowdfundGoal: '',
+    crowdfundDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   });
   const [eventSuccess, setEventSuccess] = useState(false);
 
@@ -549,11 +550,17 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
     location: '',
     budgetLimit: 0,
     crowdfundGoal: 0,
-    pixKey: ''
+    pixKey: '',
+    crowdfundDeadline: ''
   });
   const [showEditEventModal, setShowEditEventModal] = useState(false);
   const [crowdfundAmount, setCrowdfundAmount] = useState('');
   const [crowdfundSuccess, setCrowdfundSuccess] = useState(false);
+  
+  // Crowdfund Virtual PIX Simulation States
+  const [showCrowdfundPixModal, setShowCrowdfundPixModal] = useState(false);
+  const [pendingContributionAmount, setPendingContributionAmount] = useState(0);
+  const [crowdfundPixCopied, setCrowdfundPixCopied] = useState(false);
 
   React.useEffect(() => {
     if (currentUser && currentUser.pixKey) {
@@ -817,30 +824,37 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
     }
   };
 
-  const handleCrowdfundContribution = async (e) => {
+  const handleCrowdfundContribution = (e) => {
     e.preventDefault();
     if (!activeEventId || !activeEvent) return;
     const amount = parseFloat(crowdfundAmount);
     if (isNaN(amount) || amount <= 0) {
-      showToast("Por favor, digite um valor válido de apoio.", "success");
+      showToast("Por favor, digite um valor válido de apoio.", "error");
       return;
     }
+    setPendingContributionAmount(amount);
+    setShowCrowdfundPixModal(true);
+  };
 
+  const confirmCrowdfundContribution = async () => {
     try {
       const currentRaised = activeEvent.crowdfundRaised || 0;
-      const newRaised = currentRaised + amount;
+      const newRaised = currentRaised + pendingContributionAmount;
       await updateEvent(activeEventId, {
         ...activeEvent,
         crowdfundRaised: newRaised
       });
 
       const contributor = currentUser?.name || 'Apoiador Anônimo';
-      addNotification('web', `Apoio de R$ ${amount.toFixed(2)} recebido via PIX por ${contributor}.`, 'all', activeEventId);
+      const deadlineStr = activeEvent.crowdfundDeadline || activeEvent.crowdfund_deadline 
+        ? new Date(activeEvent.crowdfundDeadline || activeEvent.crowdfund_deadline).toLocaleDateString('pt-BR') 
+        : 'data limite';
+        
+      addNotification('web', `Apoio de R$ ${pendingContributionAmount.toFixed(2)} programado (PIX de fomento) por ${contributor}. Débito agendado para ${deadlineStr}.`, 'all', activeEventId);
       
       setCrowdfundAmount('');
-      setCrowdfundSuccess(true);
-      setTimeout(() => setCrowdfundSuccess(false), 3000);
-      showToast(`🎉 Obrigado pelo apoio de R$ ${amount.toFixed(2)} via PIX!`, "success");
+      setShowCrowdfundPixModal(false);
+      showToast(`🎉 Obrigado pelo apoio! PIX virtual de R$ ${pendingContributionAmount.toFixed(2)} agendado com sucesso para debitar em ${deadlineStr}.`, "success");
     } catch (err) {
       showToast("Erro ao processar contribuição: " + err.message, "error");
     }
@@ -2686,17 +2700,25 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                   </div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px', marginBottom: '16px' }}>
                   <div>
                     <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>Arrecadado</p>
-                    <p style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--color-blue)' }}>
+                    <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--color-blue)' }}>
                       R$ {(activeEvent.crowdfundRaised || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                   <div>
-                    <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>Meta do Show</p>
-                    <p style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                    <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>Meta Fomento</p>
+                    <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)' }}>
                       R$ {(activeEvent.crowdfundGoal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>Data Limite</p>
+                    <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--color-green)' }}>
+                      {activeEvent.crowdfundDeadline || activeEvent.crowdfund_deadline 
+                        ? new Date(activeEvent.crowdfundDeadline || activeEvent.crowdfund_deadline).toLocaleDateString('pt-BR') 
+                        : 'A definir'}
                     </p>
                   </div>
                 </div>
@@ -3021,9 +3043,9 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                         />
                       </div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Limite de Verba / Budget (R$)</label>
+                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Limite Verba (R$)</label>
                         <input 
                           type="number" className="form-input" required placeholder="120000"
                           value={eventForm.budgetLimit}
@@ -3032,11 +3054,20 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                         />
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Meta Crowdfunding (R$)</label>
+                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Meta Fomento (R$)</label>
                         <input 
                           type="number" className="form-input" required placeholder="50000"
                           value={eventForm.crowdfundGoal}
                           onChange={(e) => setEventForm({ ...eventForm, crowdfundGoal: e.target.value })}
+                          style={{ fontSize: '0.8rem', padding: '8px', backgroundColor: '#ffffff' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Data Limite</label>
+                        <input 
+                          type="date" className="form-input" required
+                          value={eventForm.crowdfundDeadline}
+                          onChange={(e) => setEventForm({ ...eventForm, crowdfundDeadline: e.target.value })}
                           style={{ fontSize: '0.8rem', padding: '8px', backgroundColor: '#ffffff' }}
                         />
                       </div>
@@ -4733,7 +4764,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Limite de Orçamento (R$)</label>
                   <input 
@@ -4744,11 +4775,20 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Meta Crowdfunding (R$)</label>
+                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Meta Fomento (R$)</label>
                   <input 
                     type="number" className="form-input" required
                     value={editEventForm.crowdfundGoal}
                     onChange={(e) => setEditEventForm({ ...editEventForm, crowdfundGoal: e.target.value })}
+                    style={{ backgroundColor: '#ffffff' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Data Limite</label>
+                  <input 
+                    type="date" className="form-input" required
+                    value={editEventForm.crowdfundDeadline}
+                    onChange={(e) => setEditEventForm({ ...editEventForm, crowdfundDeadline: e.target.value })}
                     style={{ backgroundColor: '#ffffff' }}
                   />
                 </div>
@@ -4769,6 +4809,76 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Salvar Alterações</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showCrowdfundPixModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px'
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: '440px', width: '100%', backgroundColor: '#ffffff', padding: '24px',
+            borderRadius: 'var(--radius-lg)', display: 'flex', flexDirection: 'column', gap: '16px',
+            color: 'var(--text-main)', textAlign: 'center'
+          }}>
+            <span style={{ fontSize: '2.5rem' }}>⚡</span>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 900, margin: 0 }}>PIX Virtual de Fomento Coletivo</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+              Esta operação funciona como uma <strong>Lei Rouanet Pessoal</strong>. Ao pagar o PIX Virtual, você autoriza o agendamento do débito de <strong>R$ {pendingContributionAmount.toFixed(2)}</strong>.
+            </p>
+            
+            <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fef3c7', padding: '12px', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', color: '#b45309', textAlign: 'left', lineHeight: '1.4' }}>
+              <strong>ℹ️ Regras do Fomento:</strong>
+              <ul style={{ margin: '6px 0 0 0', paddingLeft: '18px' }}>
+                <li>O valor <strong>só será debitado de fato</strong> se a meta de <strong>R$ {(activeEvent.crowdfundGoal || 0).toLocaleString('pt-BR')}</strong> for atingida.</li>
+                <li>Data limite da campanha: <strong>{activeEvent.crowdfundDeadline || activeEvent.crowdfund_deadline ? new Date(activeEvent.crowdfundDeadline || activeEvent.crowdfund_deadline).toLocaleDateString('pt-BR') : 'A definir'}</strong>.</li>
+                <li>Caso a meta não seja batida até a data limite, o agendamento é cancelado sem qualquer cobrança.</li>
+              </ul>
+            </div>
+
+            {/* Simulated QR Code */}
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '10px' }}>
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=00020101021226840014br.gov.pix.prod0136${activeEvent.pixKey || 'admin@gigbr.com.br'}5204000053039865405${pendingContributionAmount.toFixed(2)}5802BR5920GIGBRCrowdfunding6009SaoPaulo62070503***6304A4F2`}
+                alt="PIX Crowdfunding QR Code"
+                style={{ border: '4px solid #f3f4f6', borderRadius: '4px' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button 
+                onClick={() => {
+                  const pixPayload = `00020101021226840014br.gov.pix.prod0136${activeEvent.pixKey || 'admin@gigbr.com.br'}5204000053039865405${pendingContributionAmount.toFixed(2)}5802BR5920GIGBRCrowdfunding6009SaoPaulo62070503***6304A4F2`;
+                  navigator.clipboard.writeText(pixPayload);
+                  setCrowdfundPixCopied(true);
+                  setTimeout(() => setCrowdfundPixCopied(false), 2000);
+                }}
+                className="btn btn-secondary btn-sm"
+                style={{ padding: '10px', fontSize: '0.8rem', fontWeight: 700 }}
+              >
+                {crowdfundPixCopied ? '✓ Copiado!' : '📋 Copiar Código PIX Agendado'}
+              </button>
+              
+              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                <button 
+                  onClick={() => setShowCrowdfundPixModal(false)}
+                  className="btn btn-secondary"
+                  style={{ flex: 1, padding: '10px' }}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={confirmCrowdfundContribution}
+                  className="btn btn-primary"
+                  style={{ flex: 1, padding: '10px', fontWeight: 800 }}
+                >
+                  Confirmar PIX
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

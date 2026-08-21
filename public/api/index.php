@@ -125,7 +125,8 @@ try {
         description TEXT,
         pix_key VARCHAR(150) DEFAULT '',
         crowdfund_goal DECIMAL(12,2) DEFAULT 0.00,
-        crowdfund_raised DECIMAL(12,2) DEFAULT 0.00
+        crowdfund_raised DECIMAL(12,2) DEFAULT 0.00,
+        crowdfund_deadline VARCHAR(20) DEFAULT ''
     )");
 
     // Database schema migrations
@@ -144,6 +145,12 @@ try {
 
     try {
         $pdo->exec("ALTER TABLE users ADD COLUMN website_url TEXT DEFAULT NULL");
+    } catch (Exception $e) {
+        // Ignore errors
+    }
+
+    try {
+        $pdo->exec("ALTER TABLE events ADD COLUMN crowdfund_deadline VARCHAR(20) DEFAULT ''");
     } catch (Exception $e) {
         // Ignore errors
     }
@@ -404,13 +411,14 @@ if ($resource === 'events') {
         exit;
     }
     if ($request_method === 'POST') {
-        $stmt = $pdo->prepare("INSERT INTO events (id, name, date, location, state, latitude, longitude, budget_limit, current_spend, vessel_status, employer_id, description, pix_key, crowdfund_goal, crowdfund_raised) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO events (id, name, date, location, state, latitude, longitude, budget_limit, current_spend, vessel_status, employer_id, description, pix_key, crowdfund_goal, crowdfund_raised, crowdfund_deadline) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $input['id'], $input['name'], $input['date'], $input['location'] ?? '', $input['state'] ?? 'SP',
             $input['latitude'] ?? -23.5489, $input['longitude'] ?? -46.6388, $input['budgetLimit'] ?? $input['budget_limit'] ?? 100000.00,
             $input['currentSpend'] ?? $input['current_spend'] ?? 0.00, $input['vesselStatus'] ?? $input['vessel_status'] ?? 'Ativo',
             $input['employerId'] ?? $input['employer_id'] ?? '', $input['description'] ?? '', $input['pixKey'] ?? $input['pix_key'] ?? '',
-            $input['crowdfundGoal'] ?? $input['crowdfund_goal'] ?? 0.00, $input['crowdfundRaised'] ?? $input['crowdfund_raised'] ?? 0.00
+            $input['crowdfundGoal'] ?? $input['crowdfund_goal'] ?? 0.00, $input['crowdfundRaised'] ?? $input['crowdfund_raised'] ?? 0.00,
+            $input['crowdfundDeadline'] ?? $input['crowdfund_deadline'] ?? ''
         ]);
         $stmt = $pdo->prepare("SELECT * FROM events WHERE id = ?");
         $stmt->execute([$input['id']]);
