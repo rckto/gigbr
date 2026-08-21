@@ -348,7 +348,7 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
           setUserRole('guest');
           triggerSuccess();
         } else {
-          setError('Modo Offline: código inválido ou offline. Use BRASIL2027 ou OP-XXXX.');
+          setError('Modo Offline: código inválido ou offline. Use o código de acesso OP-XXXX.');
         }
       } else {
         // Safe offline check for credentials (check plain password or Clean CPF/CNPJ)
@@ -593,7 +593,7 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
                   <input 
                     type="text" 
                     className="form-input" 
-                    placeholder="e.g. BRASIL2027 ou OP-XXXX" 
+                    placeholder="e.g. OP-XXXX" 
                     value={inviteCode}
                     onChange={(e) => { setInviteCode(e.target.value); setError(''); }}
                     style={{ textAlign: 'center', fontSize: '1.1rem', letterSpacing: '0.12em', fontWeight: 700, textTransform: 'uppercase', padding: '10px', borderRadius: 'var(--radius-sm)', borderColor: error ? '#f87171' : 'var(--border-color)', backgroundColor: '#ffffff' }}

@@ -153,7 +153,14 @@ export const AppProvider = ({ children }) => {
       }
     } catch (e) {}
   }, [currentUser, userRole]);
-
+  const logout = () => {
+    setCurrentUser(null);
+    setUserRole('');
+    try {
+      localStorage.removeItem('gigbr_user');
+      localStorage.removeItem('gigbr_role');
+    } catch (e) {}
+  };
   // PIX Modal State
   const [pixModal, setPixModal] = useState({
     show: false,
@@ -1485,6 +1492,7 @@ export const AppProvider = ({ children }) => {
         setCurrentUser,
         userRole,
         setUserRole,
+        logout,
         deleteUserAdmin,
         updateUserAdmin,
         createUserAdmin,

@@ -464,7 +464,8 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
     updateContractor,
     updateEmployer,
     assignShiftToEvent,
-    sendEmailProposal
+    sendEmailProposal,
+    logout
   } = useContext(AppContext);
 
   // Layout Tab State: 'talentos', 'vagas', 'cadastro', 'financeiro', 'admin', 'freelancer_dash'
@@ -1456,8 +1457,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
               try {
                 await deleteUserAdmin(currentUser.id);
                 showToast("✓ Sua conta foi excluída com sucesso.", "success");
-                setCurrentUser(null);
-                setUserRole(null);
+                logout();
                 setDashboardTab('talentos');
               } catch (err) {
                 showToast("Erro ao excluir conta: " + err.message, "error");
@@ -1637,7 +1637,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
 
 
           <button 
-            onClick={() => setCurrentUser(null)} 
+            onClick={() => logout()} 
             className="btn btn-secondary btn-sm"
             style={{ 
               backgroundColor: '#fee2e2', 
@@ -1857,6 +1857,28 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '10px', gap: '8px' }}>
                           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Status: <strong style={{ color: 'var(--color-green)' }}>Disponível</strong></span>
                           <div style={{ display: 'flex', gap: '6px' }}>
+                             {(userRole === 'admin' || (currentUser && (g.leader_id === currentUser.id || g.leaderId === currentUser.id))) && (
+                              <>
+                                <button
+                                  onClick={() => setEditingGroup(g)}
+                                  className="btn btn-secondary btn-sm"
+                                  style={{ fontSize: '0.7rem' }}
+                                >
+                                  Editar
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    if (await asyncConfirm(`Deseja realmente excluir o grupo "${g.name}"?`)) {
+                                      deleteGroupAdmin(g.id);
+                                    }
+                                  }}
+                                  className="btn btn-danger btn-sm"
+                                  style={{ fontSize: '0.7rem' }}
+                                >
+                                  Excluir
+                                </button>
+                              </>
+                            )}
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1994,13 +2016,37 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                         )}
                       </div>
 
-                      <button 
-                        onClick={() => handleApplyOpportunity(job)}
-                        className="btn btn-secondary btn-sm"
-                        style={{ padding: '6px 12px' }}
-                      >
-                        Candidatar-se
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        {(userRole === 'admin' || (currentUser && (job.employer_id === currentUser.id || job.employerId === currentUser.id))) && (
+                          <>
+                            <button
+                              onClick={() => setEditingOpportunity(job)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '6px 12px', borderColor: 'var(--border-color)' }}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (await asyncConfirm(`Deseja realmente excluir a vaga "${job.title}"?`)) {
+                                  deleteOpportunityAdmin(job.id);
+                                }
+                              }}
+                              className="btn btn-danger btn-sm"
+                              style={{ padding: '6px 12px' }}
+                            >
+                              Excluir
+                            </button>
+                          </>
+                        )}
+                        <button 
+                          onClick={() => handleApplyOpportunity(job)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '6px 12px' }}
+                        >
+                          Candidatar-se
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -3378,7 +3424,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
               <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '2px 0 0 0' }}>Gerenciamento global de usuários, grupos, permissões e homologações.</p>
             </div>
             <button 
-              onClick={() => setCurrentUser(null)} 
+              onClick={() => logout()} 
               className="btn btn-secondary btn-sm"
               style={{ backgroundColor: '#fee2e2', color: '#991b1b', borderColor: '#fca5a5', fontWeight: 700, padding: '8px 16px' }}
             >
