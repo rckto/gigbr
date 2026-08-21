@@ -348,7 +348,7 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
           setUserRole('guest');
           triggerSuccess();
         } else {
-          setError('Modo Offline: código inválido ou offline. Use ADMIN2027, BRASIL2027 ou OP-XXXX.');
+          setError('Modo Offline: código inválido ou offline. Use BRASIL2027 ou OP-XXXX.');
         }
       } else {
         // Safe offline check for credentials (check plain password or Clean CPF/CNPJ)
@@ -535,48 +535,6 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
           GIG BR
         </h1>
 
-        {/* Multilingual Selector Buttons */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '24px' }}>
-          <button 
-            onClick={() => setLanguage('pt-BR')} 
-            className="btn btn-secondary btn-sm"
-            style={{
-              padding: '4px 8px',
-              fontSize: '0.75rem',
-              backgroundColor: language === 'pt-BR' ? 'var(--color-green-light)' : '#f4f4f5',
-              borderColor: language === 'pt-BR' ? 'var(--color-green)' : '#cbd5e1',
-              fontWeight: language === 'pt-BR' ? 'bold' : 'normal'
-            }}
-          >
-            🇧🇷 PT
-          </button>
-          <button 
-            onClick={() => setLanguage('es')} 
-            className="btn btn-secondary btn-sm"
-            style={{
-              padding: '4px 8px',
-              fontSize: '0.75rem',
-              backgroundColor: language === 'es' ? 'var(--color-green-light)' : '#f4f4f5',
-              borderColor: language === 'es' ? 'var(--color-green)' : '#cbd5e1',
-              fontWeight: language === 'es' ? 'bold' : 'normal'
-            }}
-          >
-            🇪🇸 ES
-          </button>
-          <button 
-            onClick={() => setLanguage('en')} 
-            className="btn btn-secondary btn-sm"
-            style={{
-              padding: '4px 8px',
-              fontSize: '0.75rem',
-              backgroundColor: language === 'en' ? 'var(--color-green-light)' : '#f4f4f5',
-              borderColor: language === 'en' ? 'var(--color-green)' : '#cbd5e1',
-              fontWeight: language === 'en' ? 'bold' : 'normal'
-            }}
-          >
-            🇺🇸 EN
-          </button>
-        </div>
 
         {!isRegistering ? (
           /* ================= LOGIN MODE ================= */
@@ -635,7 +593,7 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
                   <input 
                     type="text" 
                     className="form-input" 
-                    placeholder="e.g. BRASIL2027, ADMIN2027 ou OP-XXXX" 
+                    placeholder="e.g. BRASIL2027 ou OP-XXXX" 
                     value={inviteCode}
                     onChange={(e) => { setInviteCode(e.target.value); setError(''); }}
                     style={{ textAlign: 'center', fontSize: '1.1rem', letterSpacing: '0.12em', fontWeight: 700, textTransform: 'uppercase', padding: '10px', borderRadius: 'var(--radius-sm)', borderColor: error ? '#f87171' : 'var(--border-color)', backgroundColor: '#ffffff' }}
