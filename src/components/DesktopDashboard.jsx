@@ -1490,47 +1490,6 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
             <span>Região</span>
           </label>
 
-          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-            <button 
-              onClick={() => setLanguage('pt-BR')} 
-              className="btn btn-secondary btn-sm"
-              style={{
-                padding: '4px 6px',
-                fontSize: '0.7rem',
-                backgroundColor: language === 'pt-BR' ? 'var(--color-green-light)' : 'transparent',
-                borderColor: language === 'pt-BR' ? 'var(--color-green)' : '#cbd5e1',
-                fontWeight: language === 'pt-BR' ? 'bold' : 'normal'
-              }}
-            >
-              🇧🇷 PT
-            </button>
-            <button 
-              onClick={() => setLanguage('es')} 
-              className="btn btn-secondary btn-sm"
-              style={{
-                padding: '4px 6px',
-                fontSize: '0.7rem',
-                backgroundColor: language === 'es' ? 'var(--color-green-light)' : 'transparent',
-                borderColor: language === 'es' ? 'var(--color-green)' : '#cbd5e1',
-                fontWeight: language === 'es' ? 'bold' : 'normal'
-              }}
-            >
-              🇪🇸 ES
-            </button>
-            <button 
-              onClick={() => setLanguage('en')} 
-              className="btn btn-secondary btn-sm"
-              style={{
-                padding: '4px 6px',
-                fontSize: '0.7rem',
-                backgroundColor: language === 'en' ? 'var(--color-green-light)' : 'transparent',
-                borderColor: language === 'en' ? 'var(--color-green)' : '#cbd5e1',
-                fontWeight: language === 'en' ? 'bold' : 'normal'
-              }}
-            >
-              🇺🇸 EN
-            </button>
-          </div>
 
           <button 
             onClick={() => setCurrentUser(null)} 
@@ -1861,10 +1820,33 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{job.description}</p>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '6px' }}>
-                      <div style={{ display: 'flex', gap: '16px' }}>
+                      <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <span>📍 {job.location}</span>
                         <span>💵 Cache: <strong style={{ color: 'var(--color-green)' }}>{job.payment}</strong></span>
                         <span>📅 {job.date}</span>
+                        {job.access_code && (
+                          <span 
+                            style={{ 
+                              cursor: 'pointer', 
+                              backgroundColor: '#f3f4f6', 
+                              padding: '2px 8px', 
+                              borderRadius: '4px', 
+                              fontWeight: 'bold',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              border: '1px dashed #cbd5e1'
+                            }}
+                            onClick={() => {
+                              const shareLink = `${window.location.origin}/?opportunity=${job.access_code}`;
+                              navigator.clipboard.writeText(shareLink);
+                              showToast(`Link de compartilhamento copiado! Código: ${job.access_code}`, "success");
+                            }}
+                            title="Copiar link de compartilhamento"
+                          >
+                            🔗 Compartilhar: {job.access_code}
+                          </span>
+                        )}
                       </div>
 
                       <button 

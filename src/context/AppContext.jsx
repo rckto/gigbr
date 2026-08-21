@@ -107,6 +107,20 @@ export const AppProvider = ({ children }) => {
   const [proximityFilterEnabled, setProximityFilterEnabled] = useState(false);
   const [validAccessCodes, setValidAccessCodes] = useState(['BRASIL2027']);
 
+  // Responsive language based on userLocation (geolocation)
+  useEffect(() => {
+    if (userLocation) {
+      const { lat, lng, region } = userLocation;
+      const isBrazil = ['SP', 'RJ', 'MG'].includes(region) || 
+                       ((lat >= -34 && lat <= 5) && (lng >= -74 && lng <= -34));
+      if (isBrazil) {
+        setLanguage('pt-BR');
+      } else {
+        setLanguage('en');
+      }
+    }
+  }, [userLocation]);
+
   // Real-time notification log
   const [notifications, setNotifications] = useState([]);
   
