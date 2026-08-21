@@ -463,7 +463,8 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
     updateOpportunityAdmin,
     updateContractor,
     updateEmployer,
-    assignShiftToEvent
+    assignShiftToEvent,
+    sendEmailProposal
   } = useContext(AppContext);
 
   // Layout Tab State: 'talentos', 'vagas', 'cadastro', 'financeiro', 'admin', 'freelancer_dash'
@@ -573,6 +574,18 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
   });
   const [groupSuccess, setGroupSuccess] = useState(false);
 
+  // Freelancer dashboard group creation & search states
+  const [showCreateGroupForm, setShowCreateGroupForm] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupCategory, setNewGroupCategory] = useState('Músicos');
+  const [newGroupDescription, setNewGroupDescription] = useState('');
+  const [newGroupCity, setNewGroupCity] = useState('');
+  const [newGroupMembers, setNewGroupMembers] = useState([]); // Array of contractor objects
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  
+  const [activeAddingGroup, setActiveAddingGroup] = useState(null); // Group object to edit
+  const [editGroupSearchQuery, setEditGroupSearchQuery] = useState('');
+
   // New Event Form State
   const [eventForm, setEventForm] = useState({
     name: '',
@@ -662,16 +675,7 @@ Cachê previsto: ${job.payment}
 Data prevista: ${job.date}
 Contato do profissional: ${currentUser.phone || 'Não informado'}
 `;
-      fetch(`${apiOrigin}/api/emails/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sender: currentUser.email,
-          recipient: emailTo,
-          subject: emailSubject,
-          body: emailBody
-        })
-      }).catch(err => console.warn("Email dispatcher API offline."));
+      sendEmailProposal(currentUser.email, emailTo, emailSubject, emailBody);
 
       showToast(`✅ Candidatura enviada com sucesso!\nUma notificação contendo seu perfil foi encaminhada para a caixa postal:\n📧 ${emailTo}\n\nO registro foi salvo em emails_sent.log.`, "success");
     }
@@ -730,16 +734,7 @@ Cachê previsto: ${guestTargetJob.payment}
 Data prevista: ${guestTargetJob.date}
 Contato do profissional: ${newUser.phone || 'Não informado'}
 `;
-        await fetch(`${apiOrigin}/api/emails/send`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sender: newUser.email,
-            recipient: emailTo,
-            subject: emailSubject,
-            body: emailBody
-          })
-        }).catch(err => console.warn("Email dispatcher API offline."));
+        await sendEmailProposal(newUser.email, emailTo, emailSubject, emailBody);
       }
 
       // Upgrade to active freelancer state in context
@@ -937,9 +932,9 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
       });
       
       const targetEmployer = employers.find(emp => emp.id === reportEmployerId);
-      const targetEvent = events.find(evt => evt.id === reportEventId);
+      const targetEventName = reportEventId.startsWith('casual-') ? 'Eventos Casuais / Freelance Avulso' : (events.find(evt => evt.id === reportEventId)?.name || 'Show');
       
-      showToast(`🎉 Horas enviadas! O relatório de ${hours}h para o produtor "${targetEmployer?.name || 'Contratante'}" no evento "${targetEvent?.name || 'Show'}" foi lançado com sucesso e aguarda liberação.`, "success");
+      showToast(`🎉 Horas enviadas! O relatório de ${hours}h para o produtor "${targetEmployer?.name || 'Contratante'}" no evento "${targetEventName}" foi lançado com sucesso e aguarda liberação.`, "success");
       
       // Reset form
       setReportHours('');
@@ -1006,6 +1001,56 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
     });
     setEmployerSuccess(true);
     setTimeout(() => setEmployerSuccess(false), 3000);
+  };
+
+  const handleFreelancerCreateGroupSubmit = async (e) => {
+    e.preventDefault();
+    if (!newGroupName.trim()) {
+      showToast("Por favor, digite o nome do grupo/banda.", "error");
+      return;
+    }
+    const memberIds = [currentUser.id, ...newGroupMembers.map(m => m.id)];
+    
+    try {
+      await createGroup({
+        name: newGroupName,
+        category: newGroupCategory,
+        description: newGroupDescription,
+        city: newGroupCity || 'São Paulo - SP',
+        leader_id: currentUser.id,
+        members: memberIds,
+        email: currentUser.email,
+        avatar: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150&h=150&fit=crop'
+      });
+      showToast("🎉 Grupo/Banda criado com sucesso!", "success");
+      // Reset
+      setShowCreateGroupForm(false);
+      setNewGroupName('');
+      setNewGroupDescription('');
+      setNewGroupCity('');
+      setNewGroupMembers([]);
+      setMemberSearchQuery('');
+    } catch (err) {
+      showToast("Erro ao criar grupo: " + err.message, "error");
+    }
+  };
+
+  const handleAddMemberToExistingGroup = async (group, contractor) => {
+    const currentMembers = group.members || [];
+    if (currentMembers.includes(contractor.id)) {
+      showToast(`O profissional ${contractor.name} já é membro deste grupo.`, "warning");
+      return;
+    }
+    const updatedMembers = [...currentMembers, contractor.id];
+    try {
+      await updateGroupAdmin(group.id, {
+        ...group,
+        members: updatedMembers
+      });
+      showToast(`👥 ${contractor.name} adicionado ao grupo ${group.name} com sucesso!`, "success");
+    } catch (err) {
+      showToast("Erro ao adicionar membro: " + err.message, "error");
+    }
   };
 
   const handleJobSubmit = (e) => {
@@ -1111,9 +1156,9 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
     ? events.filter(e => e.state === userLocation.region)
     : events;
 
-  const activeEvent = events.find(e => e.id === activeEventId) || events[0];
+  const activeEvent = events.find(e => e.id === activeEventId) || (activeEventId && activeEventId.startsWith('casual-') ? { id: activeEventId, name: "Eventos Casuais / Freelance Avulso", location: "Diversos", currentSpend: 0, budgetLimit: 999999 } : events[0]);
   const eventShifts = shifts.filter(s => s.eventId === activeEvent?.id);
-  const percentSpent = activeEvent ? (activeEvent.currentSpend / activeEvent.budgetLimit) * 100 : 0;
+  const percentSpent = activeEvent ? (activeEvent.currentSpend / (activeEvent.budgetLimit || 1)) * 100 : 0;
   const isBudgetWarning = percentSpent > 85;
 
   const renderProfileForm = () => {
@@ -2863,7 +2908,10 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                     {filteredEvents.length === 0 ? (
                       <option value="" disabled>Nenhum show na região</option>
                     ) : (
-                      filteredEvents.map(evt => (
+                      [
+                        ...filteredEvents,
+                        { id: `casual-${currentUser?.id}`, name: "Eventos Casuais / Freelance Avulso", location: "Diversos" }
+                      ].map(evt => (
                         <option key={evt.id} value={evt.id}>{evt.name}</option>
                       ))
                     )}
@@ -3843,6 +3891,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                       style={{ padding: '8px', fontSize: '0.8rem', backgroundColor: '#ffffff' }}
                     >
                       <option value="">Selecione o Show...</option>
+                      <option value={`casual-${reportEmployerId}`}>Eventos Casuais / Freelance Avulso</option>
                       {events
                         .filter(evt => evt.employer_id === reportEmployerId || evt.employerId === reportEmployerId)
                         .map(evt => (
@@ -3901,27 +3950,235 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
               </form>
             </div>
 
-            {/* Groups / Bands */}
+            {/* Groups / Bands with creation and component search */}
             <div className="glass-panel" style={{ padding: '24px' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, textTransform: 'uppercase', marginBottom: '16px' }}>
-                🎸 Meus Grupos / Bandas
-              </h3>
-              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, textTransform: 'uppercase', margin: 0 }}>
+                  🎸 Meus Grupos / Bandas
+                </h3>
+                {!showCreateGroupForm && (
+                  <button 
+                    onClick={() => setShowCreateGroupForm(true)} 
+                    className="btn btn-primary btn-sm"
+                    style={{ padding: '4px 8px', fontSize: '0.7rem' }}
+                  >
+                    + Criar Grupo
+                  </button>
+                )}
+              </div>
+
+              {showCreateGroupForm && (
+                <form onSubmit={handleFreelancerCreateGroupSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '16px' }}>
+                  <h4 style={{ fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-main)' }}>Novo Grupo ou Banda</h4>
+                  
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Nome da Banda/Grupo</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="Ex: Os Nômades do Som" 
+                      className="form-input"
+                      value={newGroupName}
+                      onChange={(e) => setNewGroupName(e.target.value)}
+                      style={{ fontSize: '0.8rem', padding: '6px' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Categoria</label>
+                      <select 
+                        className="form-input"
+                        value={newGroupCategory}
+                        onChange={(e) => setNewGroupCategory(e.target.value)}
+                        style={{ fontSize: '0.8rem', padding: '6px' }}
+                      >
+                        <option value="Músicos">Músicos</option>
+                        <option value="Roadies">Roadies</option>
+                        <option value="Técnicos">Técnicos</option>
+                        <option value="Artistas">Artistas</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Cidade (Sede)</label>
+                      <input 
+                        type="text" 
+                        placeholder="Ex: São Paulo - SP" 
+                        className="form-input"
+                        value={newGroupCity}
+                        onChange={(e) => setNewGroupCity(e.target.value)}
+                        style={{ fontSize: '0.8rem', padding: '6px' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Descrição / Release</label>
+                    <textarea 
+                      rows="2"
+                      placeholder="Uma breve apresentação da banda..." 
+                      className="form-input"
+                      value={newGroupDescription}
+                      onChange={(e) => setNewGroupDescription(e.target.value)}
+                      style={{ fontSize: '0.8rem', padding: '6px', resize: 'none' }}
+                    />
+                  </div>
+
+                  {/* Component Search Box - Enforces security and privacy by not exposing full list */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Buscar e Adicionar Componentes</label>
+                    <input 
+                      type="text" 
+                      placeholder="Digite pelo menos 2 letras do nome..." 
+                      className="form-input"
+                      value={memberSearchQuery}
+                      onChange={(e) => setMemberSearchQuery(e.target.value)}
+                      style={{ fontSize: '0.8rem', padding: '6px' }}
+                    />
+                    
+                    {memberSearchQuery.trim().length >= 2 && (
+                      <div style={{ maxHeight: '120px', overflowY: 'auto', border: '1px solid #cbd5e1', borderRadius: '4px', marginTop: '6px', backgroundColor: '#ffffff', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                        {contractors
+                          .filter(c => c.id !== currentUser.id && !newGroupMembers.some(m => m.id === c.id) && c.name.toLowerCase().includes(memberSearchQuery.toLowerCase()))
+                          .map(c => (
+                            <div 
+                              key={c.id} 
+                              onClick={() => {
+                                setNewGroupMembers([...newGroupMembers, c]);
+                                setMemberSearchQuery('');
+                              }}
+                              style={{ padding: '6px 10px', fontSize: '0.75rem', borderBottom: '1px solid #f1f5f9', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                              className="search-item"
+                            >
+                              <span>{c.name} ({c.role})</span>
+                              <span style={{ color: 'var(--color-green)', fontWeight: 'bold' }}>+ Adicionar</span>
+                            </div>
+                          ))}
+                        {contractors.filter(c => c.id !== currentUser.id && !newGroupMembers.some(m => m.id === c.id) && c.name.toLowerCase().includes(memberSearchQuery.toLowerCase())).length === 0 && (
+                          <p style={{ margin: 0, padding: '8px', fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center' }}>Nenhum integrante cadastrado encontrado.</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {newGroupMembers.length > 0 && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Componentes Adicionados</label>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {newGroupMembers.map(m => (
+                          <span key={m.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.7rem', padding: '3px 8px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', color: '#1e40af' }}>
+                            {m.name}
+                            <button 
+                              type="button" 
+                              onClick={() => setNewGroupMembers(newGroupMembers.filter(member => member.id !== m.id))}
+                              style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer', padding: 0 }}
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                    <button type="submit" className="btn btn-primary btn-sm" style={{ flex: 1 }}>Criar Grupo</button>
+                    <button type="button" onClick={() => setShowCreateGroupForm(false)} className="btn btn-secondary btn-sm" style={{ flex: 1 }}>Cancelar</button>
+                  </div>
+                </form>
+              )}
+
               {groups.filter(g => g.members?.includes(currentUser?.id) || g.leader_id === currentUser?.id).length === 0 ? (
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Você ainda não faz parte de nenhuma equipe ou banda musical.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {groups.filter(g => g.members?.includes(currentUser?.id) || g.leader_id === currentUser?.id).map(g => (
-                    <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-                      <div>
-                        <strong style={{ fontSize: '0.85rem' }}>{g.name}</strong>
-                        <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Categoria: {g.category}</span>
+                  {groups.filter(g => g.members?.includes(currentUser?.id) || g.leader_id === currentUser?.id).map(g => {
+                    const isLeader = g.leader_id === currentUser?.id || g.leaderId === currentUser?.id;
+                    return (
+                      <div key={g.id} style={{ padding: '12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <strong style={{ fontSize: '0.85rem' }}>{g.name}</strong>
+                            <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Categoria: {g.category} • {g.city || 'São Paulo'}</span>
+                          </div>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#e2f0fd', color: '#0284c7', padding: '2px 8px', borderRadius: '100px' }}>
+                            {g.members?.length || 1} componentes
+                          </span>
+                        </div>
+
+                        {/* List current member names */}
+                        <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '6px' }}>
+                          <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', marginBottom: '4px' }}>Integrantes</span>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                            {(g.members || []).map(mid => {
+                              const memberObj = contractors.find(c => c.id === mid) || (mid === currentUser.id ? currentUser : null);
+                              if (!memberObj) return null;
+                              const isMebLeader = g.leader_id === mid || g.leaderId === mid;
+                              return (
+                                <span key={mid} style={{ fontSize: '0.7rem', padding: '2px 6px', backgroundColor: isMebLeader ? '#fef3c7' : '#f1f5f9', border: '1px solid', borderColor: isMebLeader ? '#fcd34d' : '#e2e8f0', borderRadius: '4px', color: isMebLeader ? '#92400e' : '#475569' }}>
+                                  {memberObj.name} {isMebLeader && '👑'}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Add components search bar (visible only to the leader) */}
+                        {isLeader && (
+                          <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '8px', marginTop: '4px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-green)' }}>➕ Adicionar Componentes</span>
+                              <button 
+                                type="button" 
+                                onClick={() => setActiveAddingGroup(activeAddingGroup === g.id ? null : g.id)}
+                                style={{ background: 'none', border: 'none', color: '#0284c7', fontSize: '0.7rem', cursor: 'pointer', fontWeight: 600 }}
+                              >
+                                {activeAddingGroup === g.id ? 'Fechar' : 'Buscar Integrante'}
+                              </button>
+                            </div>
+
+                            {activeAddingGroup === g.id && (
+                              <div>
+                                <input 
+                                  type="text"
+                                  placeholder="Digite pelo menos 2 letras do nome..."
+                                  className="form-input"
+                                  value={editGroupSearchQuery}
+                                  onChange={(e) => setEditGroupSearchQuery(e.target.value)}
+                                  style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                                />
+                                
+                                {editGroupSearchQuery.trim().length >= 2 && (
+                                  <div style={{ maxHeight: '100px', overflowY: 'auto', border: '1px solid #cbd5e1', borderRadius: '4px', marginTop: '4px', backgroundColor: '#ffffff' }}>
+                                    {contractors
+                                      .filter(c => !(g.members || []).includes(c.id) && c.name.toLowerCase().includes(editGroupSearchQuery.toLowerCase()))
+                                      .map(c => (
+                                        <div 
+                                          key={c.id}
+                                          onClick={() => {
+                                            handleAddMemberToExistingGroup(g, c);
+                                            setEditGroupSearchQuery('');
+                                          }}
+                                          style={{ padding: '6px 8px', fontSize: '0.75rem', borderBottom: '1px solid #f1f5f9', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                          className="search-item"
+                                        >
+                                          <span>{c.name}</span>
+                                          <span style={{ color: 'var(--color-green)', fontWeight: 'bold' }}>+ Adicionar</span>
+                                        </div>
+                                      ))}
+                                    {contractors.filter(c => !(g.members || []).includes(c.id) && c.name.toLowerCase().includes(editGroupSearchQuery.toLowerCase())).length === 0 && (
+                                      <p style={{ margin: 0, padding: '6px', fontSize: '0.7rem', color: '#94a3b8', textAlign: 'center' }}>Nenhum integrante disponível encontrado.</p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#e2f0fd', color: '#0284c7', padding: '2px 8px', borderRadius: '100px' }}>
-                        {g.members?.length || 1} membros
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -4138,18 +4395,9 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                                     `Acesse o dashboard no GIG BR para confirmar e responder a esta proposta.`;
 
                   try {
-                    await fetch(`${apiOrigin}/api/emails/send`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        sender: currentUser?.email || 'sistema@gigbr.com.br',
-                        recipient: targetEmail,
-                        subject: emailSubject,
-                        body: emailBody
-                      })
-                    });
+                    await sendEmailProposal(currentUser?.email || 'sistema@gigbr.com.br', targetEmail, emailSubject, emailBody);
                   } catch (err) {
-                    console.warn("Failed to dispatch email via API, falling back to local simulation logs.");
+                    console.warn("Failed to dispatch email, falling back to local simulation logs.");
                   }
 
                   setProposeSuccessDetails({

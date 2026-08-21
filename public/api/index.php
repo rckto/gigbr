@@ -641,6 +641,40 @@ if ($resource === 'shifts') {
     }
 }
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
+
+require_once __DIR__ . '/phpmailer/Exception.php';
+require_once __DIR__ . '/phpmailer/PHPMailer.php';
+require_once __DIR__ . '/phpmailer/SMTP.php';
+
+function send_phpmailer_smtp_email($to, $subject, $body, $fromName = "GIG BR") {
+    $mail = new PHPMailer(true);
+    try {
+        $mail->isSMTP();
+        $mail->Host       = 'smtp.gmail.com';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = 'studiodwdigital@gmail.com';
+        $mail->Password   = 'ncof nmzx bhxm bqbt';
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        $mail->Port       = 465;
+
+        $mail->setFrom('studiodwdigital@gmail.com', $fromName);
+        $mail->addAddress($to);
+
+        $mail->isHTML(false);
+        $mail->Subject = $subject;
+        $mail->Body    = $body;
+        $mail->CharSet = 'UTF-8';
+
+        return $mail->send();
+    } catch (\Exception $e) {
+        error_log("PHPMailer SMTP Error: " . $mail->ErrorInfo);
+        return false;
+    }
+}
+
 function send_smtp_email($to, $subject, $body, $fromName = "GIG BR") {
     $host = "smtp.gmail.com";
     $port = 465;
@@ -732,9 +766,9 @@ if ($resource === 'emails' && $id === 'send' && $request_method === 'POST') {
     
     file_put_contents(__DIR__ . '/../emails_sent.log', $logEntry, FILE_APPEND);
     
-    // Try sending via Gmail SMTP first
-    $mail_success = send_smtp_email($recipient, $fullSubject, $body, "GIG BR");
-    $method = "SMTP (Gmail)";
+    // Try sending via Gmail SMTP first using PHPMailer
+    $mail_success = send_phpmailer_smtp_email($recipient, $fullSubject, $body, "GIG BR");
+    $method = "PHPMailer SMTP (Gmail)";
 
     if (!$mail_success) {
         // OpenSource reliable local-relay email sending:

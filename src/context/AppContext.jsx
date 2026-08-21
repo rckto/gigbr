@@ -926,17 +926,50 @@ export const AppProvider = ({ children }) => {
   // Physical email proposal dispatcher method
   async function sendEmailProposal(sender, recipient, subject, body) {
     try {
-      const res = await fetch(`${apiOrigin}/api/emails/send`, {
+      // 1. Attempt EmailJS sending
+      const serviceId = 'service_uxdquce';
+      const templateId = 'template_uxdquce';
+      const publicKey = 'user_uxdquce';
+      
+      const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sender, recipient, subject, body })
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          service_id: serviceId,
+          template_id: templateId,
+          user_id: publicKey,
+          template_params: {
+            to_email: recipient,
+            from_email: sender,
+            subject: subject,
+            message: body
+          }
+        })
       });
-      if (res.ok) {
-        console.log("Email dispatch successfully logged.");
+      
+      if (response.ok) {
+        console.log("Email sent successfully via EmailJS service_uxdquce.");
         return true;
+      } else {
+        throw new Error(`EmailJS status code: ${response.status}`);
       }
     } catch (err) {
-      console.warn("Email sending API failed or offline.");
+      console.warn("EmailJS failed, falling back to backend PHP SMTP (PHPMailer):", err);
+      try {
+        const res = await fetch(`${apiOrigin}/api/emails/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sender, recipient, subject, body })
+        });
+        if (res.ok) {
+          console.log("Email dispatch successfully logged via backend PHPMailer.");
+          return true;
+        }
+      } catch (backendErr) {
+        console.warn("Email sending API failed or offline.", backendErr);
+      }
     }
     return false;
   }
