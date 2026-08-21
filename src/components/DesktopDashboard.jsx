@@ -19,6 +19,40 @@ import {
   IconStar
 } from './Icons';
 
+const formatCPF = (val) => {
+  const cleaned = val.replace(/\D/g, '');
+  const match = cleaned.match(/^(\d{0,3})(\d{0,3})(\d{0,3})(\d{0,2})$/);
+  if (!match) return cleaned;
+  let res = match[1];
+  if (match[2]) res += '.' + match[2];
+  if (match[3]) res += '.' + match[3];
+  if (match[4]) res += '-' + match[4];
+  return res.substring(0, 14);
+};
+
+const formatCNPJ = (val) => {
+  const cleaned = val.replace(/\D/g, '');
+  const match = cleaned.match(/^(\d{0,2})(\d{0,3})(\d{0,3})(\d{0,4})(\d{0,2})$/);
+  if (!match) return cleaned;
+  let res = match[1];
+  if (match[2]) res += '.' + match[2];
+  if (match[3]) res += '.' + match[3];
+  if (match[4]) res += '/' + match[4];
+  if (match[5]) res += '-' + match[5];
+  return res.substring(0, 18);
+};
+
+const formatPhone = (val) => {
+  const cleaned = val.replace(/\D/g, '');
+  const match = cleaned.match(/^(\d{0,2})(\d{0,5})(\d{0,4})$/);
+  if (!match) return cleaned;
+  let res = '';
+  if (match[1]) res += '(' + match[1];
+  if (match[2]) res += ') ' + match[2];
+  if (match[3]) res += '-' + match[3];
+  return res.substring(0, 15);
+};
+
 const getApiOrigin = () => {
   if (typeof window === 'undefined') return '';
   const { protocol, hostname } = window.location;
@@ -428,7 +462,8 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
     deleteOpportunityAdmin,
     updateOpportunityAdmin,
     updateContractor,
-    updateEmployer
+    updateEmployer,
+    assignShiftToEvent
   } = useContext(AppContext);
 
   // Layout Tab State: 'talentos', 'vagas', 'cadastro', 'financeiro', 'admin', 'freelancer_dash'
@@ -512,9 +547,18 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
     payment: '',
     date: new Date().toISOString().split('T')[0],
     description: '',
-    location: 'São Paulo - SP'
+    location: 'São Paulo - SP',
+    contact_email: '',
+    contact_phone: ''
   });
   const [jobSuccess, setJobSuccess] = useState(false);
+
+  // Consensual Hours Report State (Freelancer to Employer)
+  const [reportEmployerId, setReportEmployerId] = useState('');
+  const [reportEventId, setReportEventId] = useState('');
+  const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
+  const [reportHours, setReportHours] = useState('');
+  const [reportRate, setReportRate] = useState('');
 
   // Group Formation State
   const [groupForm, setGroupForm] = useState({
@@ -610,7 +654,7 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
       setShowGuestRegisterModal(true);
     } else {
       // Simulate real/mock email to target job author
-      const emailTo = job.email || 'roberto@globo.com.br';
+      const emailTo = job.contact_email || job.contactEmail || job.email || 'roberto@globo.com.br';
       const emailSubject = `Candidatura Registrada - Vaga: ${job.title}`;
       const emailBody = `
 Olá, o profissional ${currentUser.name} (${currentUser.email}) se candidatou para a sua vaga "${job.title}".
@@ -678,7 +722,7 @@ Contato do profissional: ${currentUser.phone || 'Não informado'}
       
       // Auto register/apply for target job
       if (guestTargetJob) {
-        const emailTo = guestTargetJob.email || 'roberto@globo.com.br';
+        const emailTo = guestTargetJob.contact_email || guestTargetJob.contactEmail || guestTargetJob.email || 'roberto@globo.com.br';
         const emailSubject = `Candidatura Convidado Homologado - Vaga: ${guestTargetJob.title}`;
         const emailBody = `
 Olá, o profissional ${newUser.name} (${newUser.email}) acabou de se cadastrar e se candidatar para a sua vaga "${guestTargetJob.title}".
@@ -857,6 +901,51 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
       showToast(`🎉 Obrigado pelo apoio! PIX virtual de R$ ${pendingContributionAmount.toFixed(2)} agendado com sucesso para debitar em ${deadlineStr}.`, "success");
     } catch (err) {
       showToast("Erro ao processar contribuição: " + err.message, "error");
+    }
+  };
+
+  const handleReportHoursSubmit = async (e) => {
+    e.preventDefault();
+    if (!reportEmployerId) {
+      showToast("Por favor, selecione um contratante/produtor.", "error");
+      return;
+    }
+    if (!reportEventId) {
+      showToast("Por favor, selecione ou crie um show/evento deste contratante.", "error");
+      return;
+    }
+    const hours = parseFloat(reportHours);
+    const rate = parseFloat(reportRate);
+    if (isNaN(hours) || hours <= 0) {
+      showToast("Informe a quantidade de horas trabalhadas.", "error");
+      return;
+    }
+    if (isNaN(rate) || rate <= 0) {
+      showToast("Informe a taxa de cachê por hora.", "error");
+      return;
+    }
+
+    try {
+      await assignShiftToEvent({
+        eventId: reportEventId,
+        contractorId: currentUser.id,
+        date: reportDate,
+        scheduledHours: hours,
+        actualHours: hours,
+        hourlyRate: rate,
+        status: 'Finalizado' // Directly set as Finalizado (waiting for validation/payout)
+      });
+      
+      const targetEmployer = employers.find(emp => emp.id === reportEmployerId);
+      const targetEvent = events.find(evt => evt.id === reportEventId);
+      
+      showToast(`🎉 Horas enviadas! O relatório de ${hours}h para o produtor "${targetEmployer?.name || 'Contratante'}" no evento "${targetEvent?.name || 'Show'}" foi lançado com sucesso e aguarda liberação.`, "success");
+      
+      // Reset form
+      setReportHours('');
+      setReportRate('');
+    } catch (err) {
+      showToast("Erro ao registrar horas: " + err.message, "error");
     }
   };
 
@@ -1422,7 +1511,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
               💼 Oportunidades
             </button>
           )}
-          {(userRole === 'admin' || userRole === 'employer' || !userRole) && (
+          {userRole === 'admin' && (
             <button 
               onClick={() => setDashboardTab('cadastro')}
               className={`btn ${dashboardTab === 'cadastro' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
@@ -2354,7 +2443,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                       placeholder="00.000.000/0001-00" 
                       required
                       value={employerForm.cnpj}
-                      onChange={(e) => setEmployerForm({...employerForm, cnpj: e.target.value})}
+                      onChange={(e) => setEmployerForm({...employerForm, cnpj: formatCNPJ(e.target.value)})}
                     />
                   </div>
 
@@ -2366,7 +2455,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                       placeholder="(00) 99999-9999" 
                       required
                       value={employerForm.phone}
-                      onChange={(e) => setEmployerForm({...employerForm, phone: e.target.value})}
+                      onChange={(e) => setEmployerForm({...employerForm, phone: formatPhone(e.target.value)})}
                     />
                   </div>
                 </div>
@@ -3708,6 +3797,110 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
               })()}
             </div>
 
+            {/* Consensual Hours Log / Checkpoint Panel */}
+            <div className="glass-panel" style={{ padding: '24px' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, textTransform: 'uppercase', marginBottom: '8px' }}>
+                ✍️ Relatório Consensual de Horas
+              </h3>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                Aponte o produtor contratante e o show para registrar suas horas trabalhadas e enviar para validação consensual.
+              </p>
+
+              <form onSubmit={handleReportHoursSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Contratante / Produtor</label>
+                    <select
+                      className="form-input"
+                      required
+                      value={reportEmployerId}
+                      onChange={(e) => {
+                        setReportEmployerId(e.target.value);
+                        const empEvents = events.filter(evt => evt.employer_id === e.target.value || evt.employerId === e.target.value);
+                        if (empEvents.length > 0) {
+                          setReportEventId(empEvents[0].id);
+                        } else {
+                          setReportEventId('');
+                        }
+                      }}
+                      style={{ padding: '8px', fontSize: '0.8rem', backgroundColor: '#ffffff' }}
+                    >
+                      <option value="">Selecione o Produtor...</option>
+                      {employers.map(emp => (
+                        <option key={emp.id} value={emp.id}>{emp.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Show / Evento</label>
+                    <select
+                      className="form-input"
+                      required
+                      value={reportEventId}
+                      onChange={(e) => setReportEventId(e.target.value)}
+                      disabled={!reportEmployerId}
+                      style={{ padding: '8px', fontSize: '0.8rem', backgroundColor: '#ffffff' }}
+                    >
+                      <option value="">Selecione o Show...</option>
+                      {events
+                        .filter(evt => evt.employer_id === reportEmployerId || evt.employerId === reportEmployerId)
+                        .map(evt => (
+                          <option key={evt.id} value={evt.id}>{evt.name} ({evt.location})</option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Data do Serviço</label>
+                    <input
+                      type="date"
+                      className="form-input"
+                      required
+                      value={reportDate}
+                      onChange={(e) => setReportDate(e.target.value)}
+                      style={{ padding: '8px', fontSize: '0.8rem', backgroundColor: '#ffffff' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Horas Trabalhadas</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      required
+                      min="0.5"
+                      step="0.5"
+                      placeholder="Ex: 8"
+                      value={reportHours}
+                      onChange={(e) => setReportHours(e.target.value)}
+                      style={{ padding: '8px', fontSize: '0.8rem', backgroundColor: '#ffffff' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Valor da Hora (R$)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      required
+                      min="1"
+                      placeholder="Ex: 50"
+                      value={reportRate}
+                      onChange={(e) => setReportRate(e.target.value)}
+                      style={{ padding: '8px', fontSize: '0.8rem', backgroundColor: '#ffffff' }}
+                    />
+                  </div>
+                </div>
+
+                <button type="submit" className="btn btn-primary btn-sm" style={{ padding: '10px', fontWeight: 800, marginTop: '6px' }}>
+                  📥 Lançar para Aprovação do Contratante
+                </button>
+              </form>
+            </div>
+
             {/* Groups / Bands */}
             <div className="glass-panel" style={{ padding: '24px' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 900, textTransform: 'uppercase', marginBottom: '16px' }}>
@@ -4070,7 +4263,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
           <span>Vagas</span>
         </button>
 
-        {(userRole === 'admin' || userRole === 'employer' || !userRole) && (
+        {userRole === 'admin' && (
           <button 
             onClick={() => setDashboardTab('cadastro')}
             style={{
@@ -4198,7 +4391,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                 <input 
                   type="text" className="form-input"
                   value={editingUser.phone || ''}
-                  onChange={(evt) => setEditingUser({ ...editingUser, phone: evt.target.value })}
+                  onChange={(evt) => setEditingUser({ ...editingUser, phone: formatPhone(evt.target.value) })}
                 />
               </div>
 

@@ -551,7 +551,9 @@ export const AppProvider = ({ children }) => {
       lng,
       description: data.description || '',
       status: 'Aberta',
-      access_code: generatedCode
+      access_code: generatedCode,
+      contact_email: data.contact_email || '',
+      contact_phone: data.contact_phone || ''
     };
 
     try {
@@ -647,11 +649,11 @@ export const AppProvider = ({ children }) => {
       contractorId: shiftData.contractorId,
       date: shiftData.date || new Date().toISOString().split('T')[0],
       scheduledHours: parseFloat(shiftData.scheduledHours || 8),
-      actualHours: null,
+      actualHours: shiftData.actualHours !== undefined ? parseFloat(shiftData.actualHours) : null,
       hourlyRate: parseFloat(shiftData.hourlyRate || 35),
-      status: 'Agendado',
-      checkInTime: null,
-      checkOutTime: null,
+      status: shiftData.status || 'Agendado',
+      checkInTime: shiftData.checkInTime || null,
+      checkOutTime: shiftData.checkOutTime || null,
       disputeNotes: '',
       invoiceEmitted: false,
       depositPaid: false,

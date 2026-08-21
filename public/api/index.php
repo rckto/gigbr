@@ -86,6 +86,8 @@ try {
         status VARCHAR(20) DEFAULT 'Aberta',
         employer_id VARCHAR(50) DEFAULT '',
         access_code VARCHAR(20),
+        contact_email VARCHAR(150) DEFAULT '',
+        contact_phone VARCHAR(50) DEFAULT '',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )");
 
@@ -151,6 +153,18 @@ try {
 
     try {
         $pdo->exec("ALTER TABLE events ADD COLUMN crowdfund_deadline VARCHAR(20) DEFAULT ''");
+    } catch (Exception $e) {
+        // Ignore errors
+    }
+
+    try {
+        $pdo->exec("ALTER TABLE opportunities ADD COLUMN contact_email VARCHAR(150) DEFAULT ''");
+    } catch (Exception $e) {
+        // Ignore errors
+    }
+
+    try {
+        $pdo->exec("ALTER TABLE opportunities ADD COLUMN contact_phone VARCHAR(50) DEFAULT ''");
     } catch (Exception $e) {
         // Ignore errors
     }
@@ -533,12 +547,14 @@ if ($resource === 'opportunities') {
         exit;
     }
     if ($request_method === 'POST') {
-        $stmt = $pdo->prepare("INSERT INTO opportunities (id, title, category, company, payment, date, location, description, status, employer_id, access_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO opportunities (id, title, category, company, payment, date, location, description, status, employer_id, access_code, contact_email, contact_phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $input['id'], $input['title'], $input['category'] ?? '', $input['company'] ?? 'Produtora Demo',
             $input['payment'] ?? '', $input['date'] ?? '', $input['location'] ?? 'São Paulo - SP',
             $input['description'] ?? '', $input['status'] ?? 'Aberta', $input['employerId'] ?? $input['employer_id'] ?? '',
-            $input['accessCode'] ?? $input['access_code'] ?? ''
+            $input['accessCode'] ?? $input['access_code'] ?? '',
+            $input['contact_email'] ?? $input['contactEmail'] ?? '',
+            $input['contact_phone'] ?? $input['contactPhone'] ?? ''
         ]);
         $stmt = $pdo->prepare("SELECT * FROM opportunities WHERE id = ?");
         $stmt->execute([$input['id']]);
@@ -546,12 +562,15 @@ if ($resource === 'opportunities') {
         exit;
     }
     if ($request_method === 'PUT' && $id) {
-        $stmt = $pdo->prepare("UPDATE opportunities SET title=?, category=?, company=?, payment=?, date=?, location=?, description=?, status=?, employer_id=?, access_code=? WHERE id=?");
+        $stmt = $pdo->prepare("UPDATE opportunities SET title=?, category=?, company=?, payment=?, date=?, location=?, description=?, status=?, employer_id=?, access_code=?, contact_email=?, contact_phone=? WHERE id=?");
         $stmt->execute([
             $input['title'], $input['category'] ?? '', $input['company'] ?? 'Produtora Demo',
             $input['payment'] ?? '', $input['date'] ?? '', $input['location'] ?? 'São Paulo - SP',
             $input['description'] ?? '', $input['status'] ?? 'Aberta', $input['employerId'] ?? $input['employer_id'] ?? '',
-            $input['accessCode'] ?? $input['access_code'] ?? '', $id
+            $input['accessCode'] ?? $input['access_code'] ?? '',
+            $input['contact_email'] ?? $input['contactEmail'] ?? '',
+            $input['contact_phone'] ?? $input['contactPhone'] ?? '',
+            $id
         ]);
         $stmt = $pdo->prepare("SELECT * FROM opportunities WHERE id = ?");
         $stmt->execute([$id]);
