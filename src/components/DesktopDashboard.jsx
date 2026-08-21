@@ -1655,7 +1655,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
               🔧 Painel Admin
             </button>
           )}
-          {(userRole === 'freelancer' || userRole === 'employer') && (
+          {currentUser && (
             <button 
               onClick={() => setDashboardTab('freelancer_dash')}
               className={`btn ${dashboardTab === 'freelancer_dash' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
