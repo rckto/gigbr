@@ -1,6 +1,6 @@
 <?php
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requester-Id, X-Requester-Role, x-requester-id, x-requester-role");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Content-Type: application/json; charset=UTF-8");
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
@@ -9,6 +9,19 @@ header("Pragma: no-cache");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
+}
+
+function getRequester() {
+    $requesterId = $_SERVER['HTTP_X_REQUESTER_ID'] ?? '';
+    $requesterRole = $_SERVER['HTTP_X_REQUESTER_ROLE'] ?? '';
+    
+    if (!$requesterId) {
+        $headers = getallheaders();
+        $requesterId = $headers['X-Requester-Id'] ?? $headers['x-requester-id'] ?? '';
+        $requesterRole = $headers['X-Requester-Role'] ?? $headers['x-requester-role'] ?? '';
+    }
+    
+    return ['id' => $requesterId, 'role' => $requesterRole];
 }
 
 $host = '127.0.0.1';
@@ -373,6 +386,13 @@ if ($resource === 'users') {
     }
 
     if ($request_method === 'PUT' && $id) {
+        $requester = getRequester();
+        if ($requester['role'] !== 'admin' && $requester['id'] !== $id) {
+            http_response_code(403);
+            echo json_encode(["error" => "Acesso negado: Você não tem permissão para editar este perfil."]);
+            exit;
+        }
+
         $name = $input['name'];
         $email = trim(strtolower($input['email']));
         $phone = $input['phone'] ?? '';
@@ -408,6 +428,12 @@ if ($resource === 'users') {
     }
 
     if ($request_method === 'DELETE' && $id) {
+        $requester = getRequester();
+        if ($requester['role'] !== 'admin' && $requester['id'] !== $id) {
+            http_response_code(403);
+            echo json_encode(["error" => "Acesso negado: Você não tem permissão para excluir este perfil."]);
+            exit;
+        }
         $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
         $stmt->execute([$id]);
         echo json_encode(["success" => true]);
@@ -428,6 +454,13 @@ if ($resource === 'events') {
         exit;
     }
     if ($request_method === 'POST') {
+        $requester = getRequester();
+        if ($requester['role'] !== 'admin' && $requester['role'] !== 'employer') {
+            http_response_code(403);
+            echo json_encode(["error" => "Acesso negado: Apenas produtores (Pessoa Jurídica) ou administradores podem cadastrar shows/eventos."]);
+            exit;
+        }
+
         $stmt = $pdo->prepare("INSERT INTO events (id, name, date, location, state, latitude, longitude, budget_limit, current_spend, vessel_status, employer_id, description, pix_key, crowdfund_goal, crowdfund_raised, crowdfund_deadline) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $input['id'], $input['name'], $input['date'], $input['location'] ?? '', $input['state'] ?? 'SP',
@@ -443,6 +476,18 @@ if ($resource === 'events') {
         exit;
     }
     if ($request_method === 'PUT' && $id) {
+        $requester = getRequester();
+        if ($requester['role'] !== 'admin') {
+            $stmt = $pdo->prepare("SELECT employer_id FROM events WHERE id = ?");
+            $stmt->execute([$id]);
+            $owner = $stmt->fetchColumn();
+            if ($owner !== $requester['id']) {
+                http_response_code(403);
+                echo json_encode(["error" => "Acesso negado: Você não tem permissão para editar este show/evento."]);
+                exit;
+            }
+        }
+
         $updates = [];
         $params = [];
         foreach ($input as $key => $val) {
@@ -462,6 +507,17 @@ if ($resource === 'events') {
         exit;
     }
     if ($request_method === 'DELETE' && $id) {
+        $requester = getRequester();
+        if ($requester['role'] !== 'admin') {
+            $stmt = $pdo->prepare("SELECT employer_id FROM events WHERE id = ?");
+            $stmt->execute([$id]);
+            $owner = $stmt->fetchColumn();
+            if ($owner !== $requester['id']) {
+                http_response_code(403);
+                echo json_encode(["error" => "Acesso negado: Você não tem permissão para excluir este show/evento."]);
+                exit;
+            }
+        }
         $stmt = $pdo->prepare("DELETE FROM events WHERE id = ?");
         $stmt->execute([$id]);
         echo json_encode(["success" => true]);
@@ -487,6 +543,18 @@ if ($resource === 'groups') {
     }
     if ($request_method === 'POST') {
         if ($id && count($path_parts) > 2 && $path_parts[2] === 'members') {
+            $requester = getRequester();
+            if ($requester['role'] !== 'admin') {
+                $stmt = $pdo->prepare("SELECT leader_id FROM groups WHERE id = ?");
+                $stmt->execute([$id]);
+                $owner = $stmt->fetchColumn();
+                if ($owner !== $requester['id']) {
+                    http_response_code(403);
+                    echo json_encode(["error" => "Acesso negado: Você não tem permissão para gerenciar membros deste grupo."]);
+                    exit;
+                }
+            }
+
             $userId = $input['userId'] ?? $input['user_id'] ?? '';
             if ($userId) {
                 $stmt = $pdo->prepare("SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?");
@@ -512,6 +580,18 @@ if ($resource === 'groups') {
         }
     }
     if ($request_method === 'PUT' && $id) {
+        $requester = getRequester();
+        if ($requester['role'] !== 'admin') {
+            $stmt = $pdo->prepare("SELECT leader_id FROM groups WHERE id = ?");
+            $stmt->execute([$id]);
+            $owner = $stmt->fetchColumn();
+            if ($owner !== $requester['id']) {
+                http_response_code(403);
+                echo json_encode(["error" => "Acesso negado: Você não tem permissão para editar este grupo/banda."]);
+                exit;
+            }
+        }
+
         $stmt = $pdo->prepare("UPDATE groups SET name=?, category=?, description=?, city=?, state=?, leader_id=?, email=?, avatar=? WHERE id=?");
         $stmt->execute([
             $input['name'], $input['category'] ?? 'Músicos', $input['description'] ?? '',
@@ -536,6 +616,17 @@ if ($resource === 'groups') {
         exit;
     }
     if ($request_method === 'DELETE' && $id) {
+        $requester = getRequester();
+        if ($requester['role'] !== 'admin') {
+            $stmt = $pdo->prepare("SELECT leader_id FROM groups WHERE id = ?");
+            $stmt->execute([$id]);
+            $owner = $stmt->fetchColumn();
+            if ($owner !== $requester['id']) {
+                http_response_code(403);
+                echo json_encode(["error" => "Acesso negado: Você não tem permissão para excluir este grupo/banda."]);
+                exit;
+            }
+        }
         $stmt = $pdo->prepare("DELETE FROM groups WHERE id = ?");
         $stmt->execute([$id]);
         $stmt = $pdo->prepare("DELETE FROM group_members WHERE group_id = ?");
@@ -577,6 +668,18 @@ if ($resource === 'opportunities') {
         exit;
     }
     if ($request_method === 'PUT' && $id) {
+        $requester = getRequester();
+        if ($requester['role'] !== 'admin') {
+            $stmt = $pdo->prepare("SELECT employer_id FROM opportunities WHERE id = ?");
+            $stmt->execute([$id]);
+            $owner = $stmt->fetchColumn();
+            if ($owner !== $requester['id']) {
+                http_response_code(403);
+                echo json_encode(["error" => "Acesso negado: Você não tem permissão para editar esta vaga."]);
+                exit;
+            }
+        }
+
         $stmt = $pdo->prepare("UPDATE opportunities SET title=?, category=?, company=?, payment=?, date=?, location=?, description=?, status=?, employer_id=?, access_code=?, contact_email=?, contact_phone=? WHERE id=?");
         $stmt->execute([
             $input['title'], $input['category'] ?? '', $input['company'] ?? 'Produtora Demo',
@@ -593,6 +696,17 @@ if ($resource === 'opportunities') {
         exit;
     }
     if ($request_method === 'DELETE' && $id) {
+        $requester = getRequester();
+        if ($requester['role'] !== 'admin') {
+            $stmt = $pdo->prepare("SELECT employer_id FROM opportunities WHERE id = ?");
+            $stmt->execute([$id]);
+            $owner = $stmt->fetchColumn();
+            if ($owner !== $requester['id']) {
+                http_response_code(403);
+                echo json_encode(["error" => "Acesso negado: Você não tem permissão para excluir esta vaga."]);
+                exit;
+            }
+        }
         $stmt = $pdo->prepare("DELETE FROM opportunities WHERE id = ?");
         $stmt->execute([$id]);
         echo json_encode(["success" => true]);

@@ -13,6 +13,39 @@ const getApiOrigin = () => {
 };
 const apiOrigin = getApiOrigin();
 
+if (typeof window !== 'undefined') {
+  const originalFetch = window.fetch;
+  window.fetch = function(url, options) {
+    try {
+      const savedUser = localStorage.getItem('gigbr_user');
+      const savedRole = localStorage.getItem('gigbr_role');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        if (user && user.id) {
+          const newOptions = options ? { ...options } : {};
+          if (newOptions.headers && typeof newOptions.headers.set === 'function') {
+            newOptions.headers.set('X-Requester-Id', user.id);
+            newOptions.headers.set('X-Requester-Role', savedRole || user.role || '');
+          } else if (newOptions.headers && Array.isArray(newOptions.headers)) {
+            newOptions.headers.push(['X-Requester-Id', user.id]);
+            newOptions.headers.push(['X-Requester-Role', savedRole || user.role || '']);
+          } else {
+            newOptions.headers = {
+              ...(newOptions.headers || {}),
+              'X-Requester-Id': user.id,
+              'X-Requester-Role': savedRole || user.role || ''
+            };
+          }
+          return originalFetch.call(window, url, newOptions);
+        }
+      }
+    } catch (e) {
+      console.error("Error setting headers in fetch override:", e);
+    }
+    return originalFetch.call(window, url, options);
+  };
+}
+
 export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
@@ -141,6 +174,12 @@ export const AppProvider = ({ children }) => {
       return null;
     }
   });
+
+  useEffect(() => {
+    if (currentUser && currentUser.role && userRole !== currentUser.role) {
+      setUserRole(currentUser.role);
+    }
+  }, [currentUser, userRole]);
 
   useEffect(() => {
     try {

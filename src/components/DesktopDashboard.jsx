@@ -477,6 +477,19 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  useEffect(() => {
+    const role = currentUser?.role || userRole;
+    if (role === 'freelancer') {
+      if (['financeiro', 'admin'].includes(dashboardTab)) {
+        setDashboardTab('freelancer_dash');
+      }
+    } else if (role === 'employer') {
+      if (['admin'].includes(dashboardTab)) {
+        setDashboardTab('freelancer_dash');
+      }
+    }
+  }, [dashboardTab, currentUser, userRole]);
+
   // Layout Tab State: 'talentos', 'vagas', 'cadastro', 'financeiro', 'admin', 'freelancer_dash'
   const [dashboardTab, setDashboardTab] = useState('talentos');
   const [vagasSubTab, setVagasSubTab] = useState('vagas'); // 'vagas' or 'eventos'
@@ -602,6 +615,7 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
     avatar: ''
   });
   const [groupSuccess, setGroupSuccess] = useState(false);
+  const [groupFormSearchTerm, setGroupFormSearchTerm] = useState('');
 
   // Freelancer dashboard group creation & search states
   const [showCreateGroupForm, setShowCreateGroupForm] = useState(false);
@@ -863,6 +877,15 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
     e.preventDefault();
     if (!editingEventId) return;
 
+    const targetEvent = events.find(ev => ev.id === editingEventId);
+    if (!targetEvent) return;
+    const isOwner = targetEvent.employer_id === currentUser?.id || targetEvent.employerId === currentUser?.id;
+    const isAdmin = userRole === 'admin' || currentUser?.role === 'admin';
+    if (!isAdmin && !isOwner) {
+      showToast("Erro: Você não tem permissão para editar este show/evento.", "error");
+      return;
+    }
+
     try {
       await updateEvent(editingEventId, editEventForm);
       setShowEditEventModal(false);
@@ -874,6 +897,15 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
   };
 
   const handleEventDelete = async (eventId) => {
+    const targetEvent = events.find(ev => ev.id === eventId);
+    if (!targetEvent) return;
+    const isOwner = targetEvent.employer_id === currentUser?.id || targetEvent.employerId === currentUser?.id;
+    const isAdmin = userRole === 'admin' || currentUser?.role === 'admin';
+    if (!isAdmin && !isOwner) {
+      showToast("Erro: Você não tem permissão para excluir este show/evento.", "error");
+      return;
+    }
+
     if (!await asyncConfirm("⚠️ Deseja realmente excluir este show/evento? Esta ação é irreversível e excluirá todo o histórico associado.")) {
       return;
     }
@@ -2339,7 +2371,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
           <div style={{ display: 'grid', gridTemplateColumns: userRole === 'freelancer' ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', maxWidth: userRole === 'freelancer' ? '600px' : 'none', width: '100%', margin: userRole === 'freelancer' ? '0 auto' : '0' }}>
             
             {/* Freelancer Form (Supports PF/PJ & OMB/DRT credentials & Bio & full states list) */}
-            <div className="glass-panel" style={{ padding: '24px', display: userRole === 'freelancer' ? 'none' : 'block' }}>
+            <div className="glass-panel" style={{ padding: '24px', display: userRole === 'admin' ? 'block' : 'none' }}>
               <div style={{ marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 900, textTransform: 'uppercase' }}>Ficha do Profissional</h3>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Cadastre seu perfil de prestação autônomo ou MEI.</p>
@@ -2621,7 +2653,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
             </div>
 
             {/* Employer Form with Hiring preference policy and Bio */}
-            <div className="glass-panel" style={{ padding: '24px', display: userRole === 'freelancer' ? 'none' : 'block' }}>
+            <div className="glass-panel" style={{ padding: '24px', display: userRole === 'admin' ? 'block' : 'none' }}>
               <div style={{ marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 900, textTransform: 'uppercase' }}>Cadastro de Contratante</h3>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Cadastre sua produtora para gerenciar escalas de gigs.</p>
@@ -2909,46 +2941,88 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
               </div>
 
               {/* Members Selection List */}
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' }}>
                   Selecionar Integrantes ({groupForm.selectedMembers.length} selecionados)
                 </label>
-                <div style={{ 
-                  flexGrow: 1, 
-                  maxHeight: '180px', 
-                  overflowY: 'auto', 
-                  border: '1px solid var(--border-color)', 
-                  borderRadius: 'var(--radius-sm)', 
-                  padding: '8px',
-                  backgroundColor: '#ffffff'
-                }}>
-                  {contractors.map(c => {
-                    const isSelected = groupForm.selectedMembers.includes(c.id);
-                    return (
-                      <label 
-                        key={c.id} 
-                        style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: '8px', 
-                          padding: '6px 8px', 
-                          borderRadius: '3px',
-                          cursor: 'pointer',
-                          backgroundColor: isSelected ? 'var(--color-green-light)' : 'transparent',
-                          fontSize: '0.75rem',
-                          marginBottom: '4px'
-                        }}
-                      >
-                        <input 
-                          type="checkbox" 
-                          checked={isSelected}
-                          onChange={() => handleMemberToggle(c.id)}
-                          style={{ accentColor: 'var(--color-green)' }}
-                        />
-                        <span style={{ fontWeight: 600 }}>{c.name} ({c.role.substring(0, 15)}...)</span>
-                      </label>
-                    );
-                  })}
+                
+                {/* List selected members */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '4px' }}>
+                  {groupForm.selectedMembers.length === 0 ? (
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>Nenhum integrante selecionado</span>
+                  ) : (
+                    groupForm.selectedMembers.map(mid => {
+                      const mObj = contractors.find(c => c.id === mid);
+                      return (
+                        <span key={mid} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.7rem', padding: '3px 8px', backgroundColor: '#e8f5e9', border: '1px solid #c8e6c9', borderRadius: '4px', color: '#2e7d32' }}>
+                          {mObj ? mObj.name : mid}
+                          <button 
+                            type="button" 
+                            onClick={() => handleMemberToggle(mid)}
+                            style={{ background: 'none', border: 'none', color: '#c62828', fontWeight: 'bold', cursor: 'pointer', padding: 0 }}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Secure search input */}
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="text"
+                    className="form-input"
+                    placeholder="Buscar profissional (mínimo 2 letras)..."
+                    value={groupFormSearchTerm}
+                    onChange={(e) => setGroupFormSearchTerm(e.target.value)}
+                    style={{ fontSize: '0.8rem', padding: '8px', backgroundColor: '#ffffff' }}
+                  />
+
+                  {groupFormSearchTerm.trim().length >= 2 && (
+                    <div style={{
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '4px',
+                      backgroundColor: '#ffffff',
+                      maxHeight: '120px',
+                      overflowY: 'auto',
+                      marginTop: '4px',
+                      position: 'absolute',
+                      width: '100%',
+                      zIndex: 10,
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}>
+                      {contractors
+                        .filter(c => !groupForm.selectedMembers.includes(c.id) && (c.name.toLowerCase().includes(groupFormSearchTerm.toLowerCase()) || c.email.toLowerCase().includes(groupFormSearchTerm.toLowerCase())))
+                        .map(c => (
+                          <div 
+                            key={c.id}
+                            onClick={() => {
+                              handleMemberToggle(c.id);
+                              setGroupFormSearchTerm('');
+                            }}
+                            style={{
+                              padding: '8px 12px',
+                              cursor: 'pointer',
+                              borderBottom: '1px solid #f4f4f5',
+                              fontSize: '0.75rem',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f4f4f5'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            <span>{c.name} ({c.role})</span>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--color-green)', fontWeight: 700 }}>+ Adicionar</span>
+                          </div>
+                        ))}
+                      {contractors.filter(c => !groupForm.selectedMembers.includes(c.id) && (c.name.toLowerCase().includes(groupFormSearchTerm.toLowerCase()) || c.email.toLowerCase().includes(groupFormSearchTerm.toLowerCase()))).length === 0 && (
+                        <p style={{ margin: 0, padding: '8px', fontSize: '0.7rem', color: '#94a3b8', textAlign: 'center' }}>Nenhum integrante encontrado.</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '12px' }}>
@@ -5678,6 +5752,13 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
             
             <form onSubmit={async (e) => {
               e.preventDefault();
+              const isOwner = editingOpportunity.employer_id === currentUser?.id || editingOpportunity.employerId === currentUser?.id;
+              const isAdmin = userRole === 'admin' || currentUser?.role === 'admin';
+              if (!isAdmin && !isOwner) {
+                showToast("Erro: Você não tem permissão para editar esta vaga.", "error");
+                setEditingOpportunity(null);
+                return;
+              }
               await updateOpportunityAdmin(editingOpportunity.id, editingOpportunity);
               setEditingOpportunity(null);
             }} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
