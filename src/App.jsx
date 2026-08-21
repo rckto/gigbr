@@ -5,6 +5,7 @@ import DesktopDashboard from './components/DesktopDashboard';
 import PixModal from './components/PixModal';
 import PublicProfile from './components/PublicProfile';
 import PublicOpportunity from './components/PublicOpportunity';
+import PublicEvent from './components/PublicEvent';
 import dashboardBg from './assets/dashboard_bg.jpg';
 
 function MainAppContent() {
@@ -74,6 +75,7 @@ function MainAppContent() {
     const talentId = params.get('talent');
     const groupId = params.get('group');
     const opportunityCode = params.get('opportunity');
+    const eventId = params.get('event');
     if (talentId) {
       setShareMode('talent');
       setShareId(talentId);
@@ -83,6 +85,9 @@ function MainAppContent() {
     } else if (opportunityCode) {
       setShareMode('opportunity');
       setShareId(opportunityCode);
+    } else if (eventId) {
+      setShareMode('event');
+      setShareId(eventId);
     }
 
     const handleResize = () => {
@@ -100,6 +105,18 @@ function MainAppContent() {
       return (
         <PublicOpportunity 
           code={shareId} 
+          onBack={() => {
+            setShareMode(null);
+            setShareId(null);
+            window.history.replaceState({}, '', '/');
+          }} 
+        />
+      );
+    }
+    if (shareMode === 'event') {
+      return (
+        <PublicEvent 
+          id={shareId} 
           onBack={() => {
             setShareMode(null);
             setShareId(null);

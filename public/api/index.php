@@ -518,6 +518,18 @@ if ($resource === 'groups') {
             $input['city'] ?? 'São Paulo', $input['state'] ?? 'SP', $input['leaderId'] ?? $input['leader_id'] ?? '',
             $input['email'], $input['avatar'] ?? '', $id
         ]);
+
+        if (isset($input['members']) && is_array($input['members'])) {
+            $stmt = $pdo->prepare("DELETE FROM group_members WHERE group_id = ?");
+            $stmt->execute([$id]);
+            foreach ($input['members'] as $userId) {
+                if ($userId) {
+                    $stmt = $pdo->prepare("INSERT INTO group_members (group_id, user_id) VALUES (?, ?)");
+                    $stmt->execute([$id, $userId]);
+                }
+            }
+        }
+
         $stmt = $pdo->prepare("SELECT * FROM groups WHERE id = ?");
         $stmt->execute([$id]);
         echo json_encode($stmt->fetch());

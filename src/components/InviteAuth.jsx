@@ -5,6 +5,37 @@ import backgroundImage from '../assets/background.jpg';
 import { auth, googleProvider } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
 
+const REGISTER_BRAZILIAN_STATES = [
+  { code: 'AC', name: 'Acre' },
+  { code: 'AL', name: 'Alagoas' },
+  { code: 'AP', name: 'Amapá' },
+  { code: 'AM', name: 'Amazonas' },
+  { code: 'BA', name: 'Bahia' },
+  { code: 'CE', name: 'Ceará' },
+  { code: 'DF', name: 'Distrito Federal' },
+  { code: 'ES', name: 'Espírito Santo' },
+  { code: 'GO', name: 'Goiás' },
+  { code: 'MA', name: 'Maranhão' },
+  { code: 'MT', name: 'Mato Grosso' },
+  { code: 'MS', name: 'Mato Grosso do Sul' },
+  { code: 'MG', name: 'Minas Gerais' },
+  { code: 'PA', name: 'Pará' },
+  { code: 'PB', name: 'Paraíba' },
+  { code: 'PR', name: 'Paraná' },
+  { code: 'PE', name: 'Pernambuco' },
+  { code: 'PI', name: 'Piauí' },
+  { code: 'RJ', name: 'Rio de Janeiro' },
+  { code: 'RN', name: 'Rio Grande do Norte' },
+  { code: 'RS', name: 'Rio Grande do Sul' },
+  { code: 'RO', name: 'Rondônia' },
+  { code: 'RR', name: 'Roraima' },
+  { code: 'SC', name: 'Santa Catarina' },
+  { code: 'SP', name: 'São Paulo' },
+  { code: 'SE', name: 'Sergipe' },
+  { code: 'TO', name: 'Tocantins' },
+  { code: 'EX', name: 'Estrangeiro / Internacional' }
+];
+
 
 
 const getApiOrigin = () => {
@@ -91,7 +122,8 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
     state: 'SP',
     omb: '',
     drt: '',
-    bio: ''
+    bio: '',
+    avatar: ''
   });
   const [showRegPassword, setShowRegPassword] = useState(false);
 
@@ -399,8 +431,18 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
     const isFreelancer = regForm.role === 'freelancer';
     const document = regForm.registrationType === 'PF' ? regForm.cpf : regForm.cnpj;
 
-    if (!regForm.name || !regForm.email || !regForm.phone || !document) {
-      setError('Por favor, preencha todos os campos obrigatórios (documentos e contatos).');
+    if (!regForm.name || !regForm.email || !regForm.phone || !document || !regForm.city || !regForm.state) {
+      setError('Por favor, preencha todos os campos obrigatórios (Nome, E-mail, Telefone, Documento, Cidade e Estado).');
+      return;
+    }
+
+    if (!regForm.avatar) {
+      setError('Por favor, faça upload de uma Foto de Perfil (Avatar) obrigatória.');
+      return;
+    }
+
+    if (isFreelancer && !regForm.category) {
+      setError('Por favor, selecione sua área de atuação (Ocupação).');
       return;
     }
 
@@ -441,6 +483,7 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
       omb: isFreelancer ? regForm.omb : '',
       drt: isFreelancer ? regForm.drt : '',
       bio: regForm.bio || (isFreelancer ? 'Freelancer homologado no GIG BR.' : 'Produtor cadastrado no GIG BR.'),
+      avatar: regForm.avatar,
       is_vetted: 1
     };
 
@@ -951,11 +994,45 @@ const InviteAuth = ({ onLoginSuccess, onAuthSuccess }) => {
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Estado (UF)</label>
-                  <input 
-                    type="text" className="form-input" required placeholder="SP" maxLength="2"
+                  <select 
+                    className="form-input" required
                     value={regForm.state}
-                    onChange={(e) => setRegForm({ ...regForm, state: e.target.value.toUpperCase() })}
-                    style={{ backgroundColor: '#ffffff' }}
+                    onChange={(e) => setRegForm({ ...regForm, state: e.target.value })}
+                    style={{ backgroundColor: '#ffffff', color: 'var(--text-main)' }}
+                  >
+                    <option value="">Selecione...</option>
+                    {REGISTER_BRAZILIAN_STATES.map(st => (
+                      <option key={st.code} value={st.code}>{st.code} - {st.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Foto de Perfil (Avatar) - Obrigatório</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {regForm.avatar ? (
+                    <img src={regForm.avatar} alt="Avatar Preview" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #cbd5e1' }} />
+                  ) : (
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>👤</div>
+                  )}
+                  <input 
+                    type="file" accept="image/*" required={!regForm.avatar}
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        if (file.size > 2 * 1024 * 1024) {
+                          alert("A imagem não pode ultrapassar 2MB!");
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setRegForm({ ...regForm, avatar: reader.result });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    style={{ fontSize: '0.75rem', flex: 1 }}
                   />
                 </div>
               </div>

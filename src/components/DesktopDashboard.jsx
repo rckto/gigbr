@@ -120,7 +120,8 @@ const BRAZILIAN_STATES = [
   { code: 'SC', name: 'Santa Catarina' },
   { code: 'SP', name: 'São Paulo' },
   { code: 'SE', name: 'Sergipe' },
-  { code: 'TO', name: 'Tocantins' }
+  { code: 'TO', name: 'Tocantins' },
+  { code: 'EX', name: 'Estrangeiro / Internacional' }
 ];
 
 // Interactive 3D Flip Card Component for Individual Freelancers
@@ -478,6 +479,7 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
 
   // Layout Tab State: 'talentos', 'vagas', 'cadastro', 'financeiro', 'admin', 'freelancer_dash'
   const [dashboardTab, setDashboardTab] = useState('talentos');
+  const [vagasSubTab, setVagasSubTab] = useState('vagas'); // 'vagas' or 'eventos'
 
   // Automatically default to Talent Directory (talentos) upon login as requested
   
@@ -548,8 +550,9 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
     bio: '',
     isVetted: true
   });
-  const [depositPIXCopied, setDepositPIXCopied] = useState(false);
   const [crewSearchTerm, setCrewSearchTerm] = useState('');
+  const [adminEditGroupSearchQuery, setAdminEditGroupSearchQuery] = useState('');
+  const [depositPIXCopied, setDepositPIXCopied] = useState(false);
 
   // Guest Registration States
   const [showGuestRegisterModal, setShowGuestRegisterModal] = useState(false);
@@ -899,6 +902,20 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
     }
     setPendingContributionAmount(amount);
     setShowCrowdfundPixModal(true);
+  };
+
+  const handleApoiarEventPix = async (event) => {
+    const defaultVal = await asyncPrompt(`Digite o valor (R$) para o apoio PIX Virtual do show "${event.name}" (Meta: R$ ${Number(event.crowdfundGoal || event.crowdfund_goal || 0).toLocaleString('pt-BR')}):`, "50");
+    if (!defaultVal) return;
+    const amount = parseFloat(defaultVal);
+    if (isNaN(amount) || amount <= 0) {
+      showToast("Por favor, digite um valor de apoio válido.", "error");
+      return;
+    }
+    setActiveEventId(event.id);
+    setPendingContributionAmount(amount);
+    setShowCrowdfundPixModal(true);
+    setDashboardTab('financeiro');
   };
 
   const confirmCrowdfundContribution = async () => {
@@ -1955,12 +1972,36 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
         <div className="dashboard-grid">
           {/* List of active opportunities */}
           <div className="glass-panel" style={{ padding: '24px' }}>
-            <div style={{ marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 900, textTransform: 'uppercase' }}>Vagas Publicadas</h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Oportunidades ativas para prestadores na plataforma GIG BR.</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '10px', borderBottom: '2px solid var(--border-color)', paddingBottom: '10px', width: '100%' }}>
+                <button 
+                  onClick={() => setVagasSubTab('vagas')}
+                  style={{
+                    background: 'none', border: 'none',
+                    fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase',
+                    color: vagasSubTab === 'vagas' ? 'var(--color-green)' : 'var(--text-secondary)',
+                    borderBottom: vagasSubTab === 'vagas' ? '3px solid var(--color-green)' : 'none',
+                    padding: '6px 12px', cursor: 'pointer', outline: 'none'
+                  }}
+                >
+                  💼 Vagas de Trabalho
+                </button>
+                <button 
+                  onClick={() => setVagasSubTab('eventos')}
+                  style={{
+                    background: 'none', border: 'none',
+                    fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase',
+                    color: vagasSubTab === 'eventos' ? 'var(--color-green)' : 'var(--text-secondary)',
+                    borderBottom: vagasSubTab === 'eventos' ? '3px solid var(--color-green)' : 'none',
+                    padding: '6px 12px', cursor: 'pointer', outline: 'none'
+                  }}
+                >
+                  ⚡ Shows & Eventos (Fomento/PIX)
+                </button>
+              </div>
             </div>
 
-            {userRole === 'guest' && (
+            {userRole === 'guest' && vagasSubTab === 'vagas' && (
               <div style={{
                 background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
                 color: '#ffffff',
@@ -1977,106 +2018,221 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
               </div>
             )}
 
-            {/* Hiring Mode Spec Explanation */}
-            <div style={{ 
-              backgroundColor: '#f4f4f5', 
-              padding: '12px', 
-              borderRadius: 'var(--radius-sm)', 
-              border: '1px solid var(--border-color)', 
-              marginBottom: '18px', 
-              fontSize: '0.8rem',
-              lineHeight: 1.4
-            }}>
-              <p>💡 <strong>Políticas de Contratação das Produtoras:</strong></p>
-              <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
-                Os contratantes na rede GIG BR indicam suas exigências fiscais. Algumas vagas exigem emissão de <strong>Nota Fiscal de MEI (CNPJ)</strong>, enquanto outras aceitam a <strong>Contratação Direta Autônoma (RPA/CPF)</strong>.
-              </p>
-            </div>
+            {vagasSubTab === 'vagas' && (
+              <div style={{ 
+                backgroundColor: '#f4f4f5', 
+                padding: '12px', 
+                borderRadius: 'var(--radius-sm)', 
+                border: '1px solid var(--border-color)', 
+                marginBottom: '18px', 
+                fontSize: '0.8rem',
+                lineHeight: 1.4
+              }}>
+                <p>💡 <strong>Políticas de Contratação das Produtoras:</strong></p>
+                <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
+                  Os contratantes na rede GIG BR indicam suas exigências fiscais. Algumas vagas exigem emissão de <strong>Nota Fiscal de MEI (CNPJ)</strong>, enquanto outras aceitam a <strong>Contratação Direta Autônoma (RPA/CPF)</strong>.
+                </p>
+              </div>
+            )}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {filteredJobs.length === 0 ? (
-                <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                  Nenhuma vaga cadastrada na região selecionada.
-                </div>
-              ) : (
-                filteredJobs.map(job => (
-                  <div key={job.id} className="glass-panel" style={{ padding: '18px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div>
-                        <h4 style={{ fontSize: '1rem', fontWeight: 800 }}>{job.title}</h4>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{job.company}</span>
-                      </div>
-                      <span className="badge badge-blue">{job.category}</span>
-                    </div>
-
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{job.description}</p>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '6px' }}>
-                      <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <span>📍 {job.location}</span>
-                        <span>💵 Cache: <strong style={{ color: 'var(--color-green)' }}>{job.payment}</strong></span>
-                        <span>📅 {job.date}</span>
-                        {job.access_code && (
-                          <span 
-                            style={{ 
-                              cursor: 'pointer', 
-                              backgroundColor: '#f3f4f6', 
-                              padding: '2px 8px', 
-                              borderRadius: '4px', 
-                              fontWeight: 'bold',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              border: '1px dashed #cbd5e1'
-                            }}
-                            onClick={() => {
-                              const shareLink = `${window.location.origin}/?opportunity=${job.access_code}`;
-                              navigator.clipboard.writeText(shareLink);
-                              showToast(`Link de compartilhamento copiado! Código: ${job.access_code}`, "success");
-                            }}
-                            title="Copiar link de compartilhamento"
-                          >
-                            🔗 Compartilhar: {job.access_code}
-                          </span>
-                        )}
-                      </div>
-
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        {(userRole === 'admin' || (currentUser && (job.employer_id === currentUser.id || job.employerId === currentUser.id))) && (
-                          <>
-                            <button
-                              onClick={() => setEditingOpportunity(job)}
-                              className="btn btn-secondary btn-sm"
-                              style={{ padding: '6px 12px', borderColor: 'var(--border-color)' }}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              onClick={async () => {
-                                if (await asyncConfirm(`Deseja realmente excluir a vaga "${job.title}"?`)) {
-                                  deleteOpportunityAdmin(job.id);
-                                }
-                              }}
-                              className="btn btn-danger btn-sm"
-                              style={{ padding: '6px 12px' }}
-                            >
-                              Excluir
-                            </button>
-                          </>
-                        )}
-                        <button 
-                          onClick={() => handleApplyOpportunity(job)}
-                          className="btn btn-secondary btn-sm"
-                          style={{ padding: '6px 12px' }}
-                        >
-                          Candidatar-se
-                        </button>
-                      </div>
-                    </div>
+            {vagasSubTab === 'vagas' ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                {filteredJobs.length === 0 ? (
+                  <div style={{ gridColumn: '1 / -1', padding: '30px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                    Nenhuma vaga cadastrada na região selecionada.
                   </div>
-                ))
-              )}
-            </div>
+                ) : (
+                  filteredJobs.map(job => (
+                    <div 
+                      key={job.id} 
+                      className="glass-panel card-glow" 
+                      style={{ 
+                        padding: '16px', 
+                        border: '1px solid var(--border-color)', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        minHeight: '260px'
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                          <div>
+                            <h4 style={{ fontSize: '0.95rem', fontWeight: 800, margin: 0 }}>{job.title}</h4>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{job.company}</span>
+                          </div>
+                          <span className="badge badge-blue" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>{job.category}</span>
+                        </div>
+
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {job.description}
+                        </p>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                          <span>📍 {job.location}</span>
+                          <span>📅 {job.date}</span>
+                          <span>💵 Cachê: <strong style={{ color: 'var(--color-green)' }}>{job.payment}</strong></span>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                          {job.access_code ? (
+                            <button 
+                              onClick={() => {
+                                const shareLink = `${window.location.origin}/?opportunity=${job.access_code}`;
+                                navigator.clipboard.writeText(shareLink);
+                                showToast(`Link copiado! Código: ${job.access_code}`, "success");
+                              }}
+                              className="btn btn-secondary btn-sm"
+                              style={{ fontSize: '0.7rem', padding: '4px 8px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                              title="Copiar link de compartilhamento"
+                            >
+                              🔗 Compartilhar
+                            </button>
+                          ) : (
+                            <span />
+                          )}
+
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            {(userRole === 'admin' || (currentUser && (job.employer_id === currentUser.id || job.employerId === currentUser.id))) && (
+                              <>
+                                <button
+                                  onClick={() => setEditingOpportunity(job)}
+                                  className="btn btn-secondary btn-sm"
+                                  style={{ padding: '4px 8px', fontSize: '0.7rem' }}
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    if (await asyncConfirm(`Deseja realmente excluir a vaga "${job.title}"?`)) {
+                                      deleteOpportunityAdmin(job.id);
+                                    }
+                                  }}
+                                  className="btn btn-danger btn-sm"
+                                  style={{ padding: '4px 8px', fontSize: '0.7rem', backgroundColor: '#ef4444', border: 'none', color: '#fff' }}
+                                >
+                                  🗑️
+                                </button>
+                              </>
+                            )}
+                            <button 
+                              onClick={() => handleApplyOpportunity(job)}
+                              className="btn btn-primary btn-sm"
+                              style={{ padding: '4px 10px', fontSize: '0.7rem' }}
+                            >
+                              Candidatar-se
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            ) : (
+              /* Event cards grid */
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                {events.length === 0 ? (
+                  <div style={{ gridColumn: '1 / -1', padding: '30px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                    Nenhum show ou evento cadastrado.
+                  </div>
+                ) : (
+                  events.map(evt => {
+                    const raised = Number(evt.crowdfund_raised || evt.crowdfundRaised || 0);
+                    const goal = Number(evt.crowdfund_goal || evt.crowdfundGoal || 0);
+                    const progress = goal > 0 ? Math.min((raised / goal) * 100, 100) : 0;
+                    
+                    return (
+                      <div 
+                        key={evt.id} 
+                        className="glass-panel card-glow" 
+                        style={{ 
+                          padding: '16px', 
+                          border: '1px solid var(--border-color)', 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          justifyContent: 'space-between',
+                          gap: '12px',
+                          minHeight: '260px'
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                            <div>
+                              <h4 style={{ fontSize: '0.95rem', fontWeight: 800, margin: 0 }}>{evt.name}</h4>
+                              <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>📍 {evt.location} • {evt.state}</span>
+                            </div>
+                            <span className="badge badge-yellow" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>Show</span>
+                          </div>
+
+                          <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            {evt.description || 'Nenhuma descrição fornecida.'}
+                          </p>
+
+                          {/* Crowdfunding goal and progress bar */}
+                          {goal > 0 && (
+                            <div style={{ marginTop: '10px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', marginBottom: '4px' }}>
+                                <span>Progresso PIX:</span>
+                                <strong>R$ {raised.toFixed(2)} / R$ {goal.toFixed(2)}</strong>
+                              </div>
+                              <div style={{ width: '100%', height: '8px', backgroundColor: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                                <div style={{ width: `${progress}%`, height: '100%', backgroundColor: 'var(--color-green)', borderRadius: '4px' }} />
+                              </div>
+                              <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', display: 'block', marginTop: '4px' }}>
+                                📅 Limite: {evt.crowdfund_deadline || evt.crowdfundDeadline || 'Não definido'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                            <button 
+                              onClick={() => {
+                                const shareLink = `${window.location.origin}/?event=${evt.id}`;
+                                navigator.clipboard.writeText(shareLink);
+                                showToast(`Link do evento copiado!`, "success");
+                              }}
+                              className="btn btn-secondary btn-sm"
+                              style={{ fontSize: '0.7rem', padding: '4px 8px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              🔗 Compartilhar
+                            </button>
+
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                              {(userRole === 'admin' || (currentUser && (evt.employer_id === currentUser.id || evt.employerId === currentUser.id))) && (
+                                <button
+                                  onClick={async () => {
+                                    if (await asyncConfirm(`Deseja realmente excluir o show/evento "${evt.name}"?`)) {
+                                      deleteEvent(evt.id);
+                                    }
+                                  }}
+                                  className="btn btn-danger btn-sm"
+                                  style={{ padding: '4px 8px', fontSize: '0.7rem', backgroundColor: '#ef4444', border: 'none', color: '#fff' }}
+                                >
+                                  🗑️
+                                </button>
+                              )}
+                              <button 
+                                onClick={() => handleApoiarEventPix(evt)}
+                                className="btn btn-primary btn-sm"
+                                style={{ padding: '4px 10px', fontSize: '0.7rem', backgroundColor: 'var(--color-green)', border: 'none' }}
+                              >
+                                ⚡ Apoiar via PIX
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
           </div>
 
           {/* Form to post new job */}
@@ -3268,7 +3424,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
             </div>
 
             {/* Crew Cost Allocations Form (Controle de Custos Humanos) */}
-            {userRole === 'employer' && activeEvent && (
+            {(userRole === 'employer' || userRole === 'admin') && activeEvent && (
               <div className="glass-panel" style={{ padding: '24px' }}>
                 <h4 style={{ fontSize: '1.1rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '4px' }}>Alocação de Equipe (Custos Humanos)</h4>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '14px' }}>
@@ -3424,10 +3580,10 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
             )}
 
             {/* Create Event Form */}
-            {userRole === 'employer' && (
+            {(userRole === 'employer' || userRole === 'admin') && (
               <div className="glass-panel" style={{ padding: '24px' }}>
                 <h4 style={{ fontSize: '1.1rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '14px' }}>Cadastrar Novo Show/Evento</h4>
-                {!currentUser.cnpj ? (
+                {!(currentUser?.cnpj || userRole === 'admin') ? (
                   <div style={{ backgroundColor: '#fffbeb', border: '1px solid #f59e0b', color: '#b45309', padding: '12px', borderRadius: 'var(--radius-sm)', fontSize: '0.8rem', fontWeight: 600 }}>
                     ⚠️ Apenas produtores cadastrados com CNPJ podem criar novos eventos no sistema.
                   </div>
@@ -5408,6 +5564,93 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                   onChange={(evt) => setEditingGroup({ ...editingGroup, description: evt.target.value })}
                   style={{ fontSize: '0.8rem', resize: 'none' }}
                 />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Componentes do Grupo / Banda</label>
+                
+                {/* List current members */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                  {(editingGroup.members || []).length === 0 ? (
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>Nenhum integrante adicionado</span>
+                  ) : (
+                    (editingGroup.members || []).map(mid => {
+                      const mObj = contractors.find(c => c.id === mid);
+                      return (
+                        <span key={mid} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.7rem', padding: '3px 8px', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '4px', color: '#166534' }}>
+                          {mObj ? mObj.name : mid}
+                          <button 
+                            type="button" 
+                            onClick={() => {
+                              const updated = (editingGroup.members || []).filter(id => id !== mid);
+                              setEditingGroup({ ...editingGroup, members: updated });
+                            }}
+                            style={{ background: 'none', border: 'none', color: '#dc2626', fontWeight: 'bold', cursor: 'pointer', padding: 0 }}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Add new members search bar */}
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="text"
+                    className="form-input"
+                    placeholder="Adicionar integrante (digite nome ou e-mail)..."
+                    value={adminEditGroupSearchQuery}
+                    onChange={(e) => setAdminEditGroupSearchQuery(e.target.value)}
+                    style={{ fontSize: '0.75rem', padding: '6px' }}
+                  />
+
+                  {adminEditGroupSearchQuery.trim().length >= 2 && (
+                    <div style={{
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '4px',
+                      backgroundColor: '#ffffff',
+                      maxHeight: '120px',
+                      overflowY: 'auto',
+                      marginTop: '4px',
+                      position: 'absolute',
+                      width: '100%',
+                      zIndex: 10,
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}>
+                      {contractors
+                        .filter(c => !(editingGroup.members || []).includes(c.id) && (c.name.toLowerCase().includes(adminEditGroupSearchQuery.toLowerCase()) || c.email.toLowerCase().includes(adminEditGroupSearchQuery.toLowerCase())))
+                        .map(c => (
+                          <div 
+                            key={c.id}
+                            onClick={() => {
+                              const updated = [...(editingGroup.members || []), c.id];
+                              setEditingGroup({ ...editingGroup, members: updated });
+                              setAdminEditGroupSearchQuery('');
+                            }}
+                            style={{
+                              padding: '6px 10px',
+                              cursor: 'pointer',
+                              borderBottom: '1px solid #f4f4f5',
+                              fontSize: '0.75rem',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f4f4f5'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            <span>{c.name} ({c.role})</span>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Adicionar +</span>
+                          </div>
+                        ))}
+                      {contractors.filter(c => !(editingGroup.members || []).includes(c.id) && (c.name.toLowerCase().includes(adminEditGroupSearchQuery.toLowerCase()) || c.email.toLowerCase().includes(adminEditGroupSearchQuery.toLowerCase()))).length === 0 && (
+                        <p style={{ margin: 0, padding: '6px', fontSize: '0.7rem', color: '#94a3b8', textAlign: 'center' }}>Nenhum integrante encontrado.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
