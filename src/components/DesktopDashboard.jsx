@@ -468,6 +468,13 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
     logout
   } = useContext(AppContext);
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Layout Tab State: 'talentos', 'vagas', 'cadastro', 'financeiro', 'admin', 'freelancer_dash'
   const [dashboardTab, setDashboardTab] = useState('talentos');
 
@@ -2880,7 +2887,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                   </div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: '14px', marginBottom: '16px' }}>
                   <div>
                     <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>Arrecadado</p>
                     <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--color-blue)' }}>
@@ -2937,19 +2944,19 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
 
             {/* Shifts verification and settlement table */}
             <div className="glass-panel" style={{ padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: '12px', marginBottom: '16px' }}>
                 <div>
                   <h4 style={{ fontSize: '1.1rem', fontWeight: 800, textTransform: 'uppercase' }}>{t.shiftsVerif}</h4>
                   <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Aprove relatórios de horas extras e liquide via PIX.</p>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
                   <IconCalendar style={{ color: 'var(--text-secondary)', width: '16px', height: '16px' }} />
                   <select 
                     value={activeEventId}
                     onChange={(e) => setActiveEventId(e.target.value)}
                     className="form-input"
-                    style={{ padding: '6px 10px', minWidth: '220px', fontSize: '0.8rem' }}
+                    style={{ padding: '6px 10px', width: isMobile ? '100%' : 'auto', minWidth: isMobile ? '0' : '220px', fontSize: '0.8rem' }}
                   >
                     {filteredEvents.length === 0 ? (
                       <option value="" disabled>Nenhum show na região</option>
@@ -2965,132 +2972,249 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                 </div>
               </div>
 
-              <div className="data-table-container">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>{t.contractorName}</th>
-                      <th>{t.category}</th>
-                      <th style={{ textAlign: 'center' }}>Horas (Real/Prev)</th>
-                      <th style={{ textAlign: 'center' }}>{t.status}</th>
-                      <th style={{ textAlign: 'center' }}>{t.actions}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {eventShifts.length === 0 ? (
-                      <tr>
-                        <td colSpan="5" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                          Nenhum prestador escalado para este show.
-                        </td>
-                      </tr>
-                    ) : (
-                      eventShifts.map(shift => {
-                        const contractor = contractors.find(c => c.id === shift.contractorId);
-                        if (!contractor) return null;
-                        
-                        return (
-                          <tr key={shift.id}>
-                            <td>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <img 
-                                  src={contractor.avatar} 
-                                  alt={contractor.name} 
-                                  style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} 
-                                />
-                                <div>
-                                  <p style={{ fontWeight: 600 }}>{contractor.name}</p>
-                                  <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                                    {contractor.cnpj ? `MEI: ${contractor.cnpj}` : `PF: ${contractor.cpf || 'Autônomo'}`}
-                                  </p>
-                                </div>
-                              </div>
-                            </td>
-                            <td>
-                              <p style={{ fontWeight: 600 }}>{contractor.role}</p>
-                              <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>R$ {(shift.hourlyRate || 0).toFixed(2)}/h</p>
-                            </td>
-                            <td style={{ textAlign: 'center' }}>
+              {isMobile ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+                  {eventShifts.length === 0 ? (
+                    <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                      Nenhum prestador escalado para este show.
+                    </div>
+                  ) : (
+                    eventShifts.map(shift => {
+                      const contractor = contractors.find(c => c.id === shift.contractorId);
+                      if (!contractor) return null;
+                      
+                      return (
+                        <div key={shift.id} className="glass-panel" style={{ padding: '14px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px', backgroundColor: '#ffffff' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <img 
+                              src={contractor.avatar} 
+                              alt={contractor.name} 
+                              style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} 
+                            />
+                            <div>
+                              <p style={{ fontWeight: 600, fontSize: '0.85rem' }}>{contractor.name}</p>
+                              <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                                {contractor.cnpj ? `MEI: ${contractor.cnpj}` : `PF: ${contractor.cpf || 'Autônomo'}`}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '0.75rem', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', padding: '8px 0' }}>
+                            <div>
+                              <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block' }}>Função</span>
+                              <strong>{contractor.role}</strong> (R$ {(shift.hourlyRate || 0).toFixed(2)}/h)
+                            </div>
+                            <div>
+                              <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block' }}>Horas</span>
                               {adjustingShiftId === shift.id ? (
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                   <input 
                                     type="number" 
                                     value={adjustedHours}
                                     onChange={(e) => setAdjustedHours(e.target.value)}
                                     className="form-input"
-                                    style={{ width: '70px', padding: '4px 8px', fontSize: '0.8rem' }}
+                                    style={{ width: '60px', padding: '4px 6px', fontSize: '0.8rem' }}
                                   />
-                                  <button onClick={() => handleAdjustSave(shift.id)} className="btn btn-primary btn-sm" style={{ padding: '6px' }}>
-                                    Salvar
+                                  <button onClick={() => handleAdjustSave(shift.id)} className="btn btn-primary btn-sm" style={{ padding: '4px 8px', fontSize: '0.75rem' }}>
+                                    Ok
                                   </button>
                                 </div>
                               ) : (
                                 <div>
-                                  <p style={{ fontWeight: 700 }}>
-                                    {shift.actualHours !== null ? `${shift.actualHours}h` : `${shift.scheduledHours}h`}
-                                  </p>
+                                  <strong>{shift.actualHours !== null ? `${shift.actualHours}h` : `${shift.scheduledHours}h`}</strong>
                                   {shift.checkInTime && (
-                                    <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                                    <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', display: 'block' }}>
                                       ⏱️ {shift.checkInTime} → {shift.checkOutTime || 'Ativo'}
-                                    </p>
+                                    </span>
                                   )}
                                 </div>
                               )}
-                            </td>
-                            <td style={{ textAlign: 'center' }}>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>Status</span>
                               {shift.status === 'Pago' && <span className="badge badge-green">{t.paid}</span>}
                               {shift.status === 'Disputado' && <span className="badge badge-red pulse-active">{t.disputed}</span>}
                               {shift.status === 'Finalizado' && <span className="badge badge-yellow">{t.completed}</span>}
                               {shift.status === 'Em Andamento' && <span className="badge badge-blue">{t.activeOnsite}</span>}
                               {shift.status === 'Agendado' && <span className="badge badge-gray">{t.scheduled}</span>}
-                            </td>
-                            <td style={{ textAlign: 'center' }}>
-                              <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
-                                {(userRole === 'admin' || userRole === 'employer') ? (
-                                  (shift.status === 'Finalizado' || shift.status === 'Disputado') && (
-                                    <>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              {(userRole === 'admin' || userRole === 'employer') ? (
+                                (shift.status === 'Finalizado' || shift.status === 'Disputado') && (
+                                  <>
+                                    <button 
+                                      onClick={() => openPixPayment(shift.id)}
+                                      className="btn btn-primary btn-sm"
+                                      style={{ display: 'inline-flex', gap: '4px', padding: '6px 10px', fontSize: '0.7rem' }}
+                                    >
+                                      <IconPixSymbol style={{ width: '12px', height: '12px' }} /> {t.payPix}
+                                    </button>
+                                    {shift.status === 'Disputado' && (
                                       <button 
-                                        onClick={() => openPixPayment(shift.id)}
-                                        className="btn btn-primary btn-sm"
-                                        style={{ display: 'inline-flex', gap: '4px', padding: '6px 10px', fontSize: '0.7rem' }}
+                                        onClick={() => handleAdjustStart(shift)}
+                                        className="btn btn-secondary btn-sm"
+                                        style={{ padding: '6px 10px', fontSize: '0.7rem' }}
                                       >
-                                        <IconPixSymbol style={{ width: '12px', height: '12px' }} /> {t.payPix}
+                                        Ajustar
                                       </button>
-                                      {shift.status === 'Disputado' && (
-                                        <button 
-                                          onClick={() => handleAdjustStart(shift)}
-                                          className="btn btn-secondary btn-sm"
-                                          style={{ fontSize: '0.7rem' }}
-                                        >
-                                          Ajustar
-                                        </button>
-                                      )}
-                                    </>
-                                  )
+                                    )}
+                                  </>
+                                )
+                              ) : (
+                                (shift.status === 'Finalizado' || shift.status === 'Disputado') && (
+                                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Aguardando liberação</span>
+                                )
+                              )}
+                              {shift.status === 'Pago' && (
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <IconCheck style={{ color: 'var(--color-green)', width: '12px' }} /> Comprovante OK
+                                </span>
+                              )}
+                              {shift.status === 'Em Andamento' && (
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Trabalhando no local</span>
+                              )}
+                              {shift.status === 'Agendado' && (
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Aguardando Check-in</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              ) : (
+                <div className="data-table-container">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>{t.contractorName}</th>
+                        <th>{t.category}</th>
+                        <th style={{ textAlign: 'center' }}>Horas (Real/Prev)</th>
+                        <th style={{ textAlign: 'center' }}>{t.status}</th>
+                        <th style={{ textAlign: 'center' }}>{t.actions}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {eventShifts.length === 0 ? (
+                        <tr>
+                          <td colSpan="5" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                            Nenhum prestador escalado para este show.
+                          </td>
+                        </tr>
+                      ) : (
+                        eventShifts.map(shift => {
+                          const contractor = contractors.find(c => c.id === shift.contractorId);
+                          if (!contractor) return null;
+                          
+                          return (
+                            <tr key={shift.id}>
+                              <td>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <img 
+                                    src={contractor.avatar} 
+                                    alt={contractor.name} 
+                                    style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} 
+                                  />
+                                  <div>
+                                    <p style={{ fontWeight: 600 }}>{contractor.name}</p>
+                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                                      {contractor.cnpj ? `MEI: ${contractor.cnpj}` : `PF: ${contractor.cpf || 'Autônomo'}`}
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td>
+                                <p style={{ fontWeight: 600 }}>{contractor.role}</p>
+                                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>R$ {(shift.hourlyRate || 0).toFixed(2)}/h</p>
+                              </td>
+                              <td style={{ textAlign: 'center' }}>
+                                {adjustingShiftId === shift.id ? (
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                    <input 
+                                      type="number" 
+                                      value={adjustedHours}
+                                      onChange={(e) => setAdjustedHours(e.target.value)}
+                                      className="form-input"
+                                      style={{ width: '70px', padding: '4px 8px', fontSize: '0.8rem' }}
+                                    />
+                                    <button onClick={() => handleAdjustSave(shift.id)} className="btn btn-primary btn-sm" style={{ padding: '6px' }}>
+                                      Salvar
+                                    </button>
+                                  </div>
                                 ) : (
-                                  (shift.status === 'Finalizado' || shift.status === 'Disputado') && (
-                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Aguardando liberação</span>
-                                  )
+                                  <div>
+                                    <p style={{ fontWeight: 700 }}>
+                                      {shift.actualHours !== null ? `${shift.actualHours}h` : `${shift.scheduledHours}h`}
+                                    </p>
+                                    {shift.checkInTime && (
+                                      <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                                        ⏱️ {shift.checkInTime} → {shift.checkOutTime || 'Ativo'}
+                                      </p>
+                                    )}
+                                  </div>
                                 )}
-                                {shift.status === 'Pago' && (
-                                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                    <IconCheck style={{ color: 'var(--color-green)', width: '12px' }} /> Comprovante OK
-                                  </span>
-                                )}
-                                {shift.status === 'Em Andamento' && (
-                                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Trabalhando no local</span>
-                                )}
-                                {shift.status === 'Agendado' && (
-                                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Aguardando Check-in</span>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                              </td>
+                              <td style={{ textAlign: 'center' }}>
+                                {shift.status === 'Pago' && <span className="badge badge-green">{t.paid}</span>}
+                                {shift.status === 'Disputado' && <span className="badge badge-red pulse-active">{t.disputed}</span>}
+                                {shift.status === 'Finalizado' && <span className="badge badge-yellow">{t.completed}</span>}
+                                {shift.status === 'Em Andamento' && <span className="badge badge-blue">{t.activeOnsite}</span>}
+                                {shift.status === 'Agendado' && <span className="badge badge-gray">{t.scheduled}</span>}
+                              </td>
+                              <td style={{ textAlign: 'center' }}>
+                                <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                                  {(userRole === 'admin' || userRole === 'employer') ? (
+                                    (shift.status === 'Finalizado' || shift.status === 'Disputado') && (
+                                      <>
+                                        <button 
+                                          onClick={() => openPixPayment(shift.id)}
+                                          className="btn btn-primary btn-sm"
+                                          style={{ display: 'inline-flex', gap: '4px', padding: '6px 10px', fontSize: '0.7rem' }}
+                                        >
+                                          <IconPixSymbol style={{ width: '12px', height: '12px' }} /> {t.payPix}
+                                        </button>
+                                        {shift.status === 'Disputado' && (
+                                          <button 
+                                            onClick={() => handleAdjustStart(shift)}
+                                            className="btn btn-secondary btn-sm"
+                                            style={{ fontSize: '0.7rem' }}
+                                          >
+                                            Ajustar
+                                          </button>
+                                        )}
+                                      </>
+                                    )
+                                  ) : (
+                                    (shift.status === 'Finalizado' || shift.status === 'Disputado') && (
+                                      <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Aguardando liberação</span>
+                                    )
+                                  )}
+                                  {shift.status === 'Pago' && (
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                      <IconCheck style={{ color: 'var(--color-green)', width: '12px' }} /> Comprovante OK
+                                    </span>
+                                  )}
+                                  {shift.status === 'Em Andamento' && (
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Trabalhando no local</span>
+                                  )}
+                                  {shift.status === 'Agendado' && (
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Aguardando Check-in</span>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
 
@@ -4595,7 +4719,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
             }}
           >
             <span style={{ fontSize: '1.2rem' }}>💰</span>
-            <span>Financeiro</span>
+            <span>Gestão</span>
           </button>
         )}
 
@@ -4638,6 +4762,27 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
           >
             <span style={{ fontSize: '1.2rem' }}>👤</span>
             <span>Meu Dashboard</span>
+          </button>
+        )}
+
+        {currentUser && (
+          <button 
+            onClick={() => logout()}
+            style={{
+              background: 'none',
+              border: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              fontSize: '0.65rem',
+              fontWeight: 600,
+              color: '#ef4444',
+              cursor: 'pointer',
+              gap: '4px'
+            }}
+          >
+            <span style={{ fontSize: '1.2rem' }}>🚪</span>
+            <span>Sair</span>
           </button>
         )}
       </div>
