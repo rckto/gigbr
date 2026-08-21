@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../context/AppContext';
+import newsletterBg from '../assets/newsletter_bg.jpg';
+import opportunityBg from '../assets/opportunity_bg.jpg';
 
 export default function PublicOpportunity({ code, onBack }) {
   const { showToast } = useContext(AppContext);
@@ -78,7 +80,7 @@ export default function PublicOpportunity({ code, onBack }) {
   // Render Newsletter Registration Screen
   if (!subscribed) {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9', padding: '20px', backgroundImage: 'radial-gradient(circle at 10% 20%, rgb(239, 246, 255) 0%, rgb(219, 234, 254) 100%)' }}>
+      <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9', padding: '20px', backgroundImage: `url(${newsletterBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
         <div className="glass-panel" style={{ maxWidth: '460px', width: '100%', backgroundColor: '#ffffff', padding: '32px', borderRadius: '12px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', border: '1px solid #e2e8f0', color: '#0f172a' }}>
           
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
@@ -134,9 +136,8 @@ export default function PublicOpportunity({ code, onBack }) {
     );
   }
 
-  // Render Opportunity Card View
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9', padding: '20px', backgroundImage: 'radial-gradient(circle at 10% 20%, rgb(239, 246, 255) 0%, rgb(219, 234, 254) 100%)' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9', padding: '20px', backgroundImage: `url(${opportunityBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="glass-panel" style={{ 
         maxWidth: '520px', 
         width: '100%', 

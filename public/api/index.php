@@ -705,19 +705,26 @@ if ($resource === 'emails' && $id === 'send' && $request_method === 'POST') {
     
     file_put_contents(__DIR__ . '/../emails_sent.log', $logEntry, FILE_APPEND);
     
-    // OpenSource reliable local-relay email sending:
-    // Send from no-reply@phpstack-897068-6608878.cloudwaysapps.com to guarantee SPF validity on Cloudways,
-    // but direct the reply to the sender's actual email address.
-    $fromMail = "no-reply@phpstack-897068-6608878.cloudwaysapps.com";
-    $headers = "From: GIG BR <" . $fromMail . ">\r\n" .
-               "Reply-To: " . $sender . "\r\n" .
-               "MIME-Version: 1.0\r\n" .
-               "Content-Type: text/plain; charset=utf-8\r\n" .
-               "X-Mailer: PHP/" . phpversion();
-    
-    $mail_success = @mail($recipient, "=?UTF-8?B?" . base64_encode($fullSubject) . "?=", $body, $headers, "-f" . $fromMail);
+    // Try sending via Gmail SMTP first
+    $mail_success = send_smtp_email($recipient, $fullSubject, $body, "GIG BR");
+    $method = "SMTP (Gmail)";
 
-    echo json_encode(["success" => $mail_success, "message" => "Email processed.", "method" => "Local Relay Sendmail"]);
+    if (!$mail_success) {
+        // OpenSource reliable local-relay email sending:
+        // Send from no-reply@phpstack-897068-6608878.cloudwaysapps.com to guarantee SPF validity on Cloudways,
+        // but direct the reply to the sender's actual email address.
+        $fromMail = "no-reply@phpstack-897068-6608878.cloudwaysapps.com";
+        $headers = "From: GIG BR <" . $fromMail . ">\r\n" .
+                   "Reply-To: " . $sender . "\r\n" .
+                   "MIME-Version: 1.0\r\n" .
+                   "Content-Type: text/plain; charset=utf-8\r\n" .
+                   "X-Mailer: PHP/" . phpversion();
+        
+        $mail_success = @mail($recipient, "=?UTF-8?B?" . base64_encode($fullSubject) . "?=", $body, $headers, "-f" . $fromMail);
+        $method = "Local Relay Sendmail (Fallback)";
+    }
+
+    echo json_encode(["success" => $mail_success, "message" => "Email processed.", "method" => $method]);
     exit;
 }
 

@@ -611,8 +611,6 @@ Cachê previsto: ${job.payment}
 Data prevista: ${job.date}
 Contato do profissional: ${currentUser.phone || 'Não informado'}
 `;
-
-      const apiOrigin = window.location.hostname === 'localhost' ? `${apiOrigin}` : window.location.origin;
       fetch(`${apiOrigin}/api/emails/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -657,7 +655,6 @@ Contato do profissional: ${currentUser.phone || 'Não informado'}
       completed_shifts: 0
     };
 
-    const apiOrigin = window.location.hostname === 'localhost' ? `${apiOrigin}` : window.location.origin;
     try {
       const res = await fetch(`${apiOrigin}/api/users`, {
         method: 'POST',
