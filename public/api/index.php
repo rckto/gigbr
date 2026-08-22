@@ -395,6 +395,16 @@ if ($resource === 'users') {
 
         $name = $input['name'];
         $email = trim(strtolower($input['email']));
+
+        // Check if email is already taken by another user
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
+        $stmt->execute([$email, $id]);
+        if ($stmt->fetch()) {
+            http_response_code(409);
+            echo json_encode(["error" => "E-mail já cadastrado por outro usuário!"]);
+            exit;
+        }
+
         $phone = $input['phone'] ?? '';
         $role = $input['role'] ?? 'freelancer';
         $omb = $input['omb'] ?? '';
@@ -402,8 +412,29 @@ if ($resource === 'users') {
         $bio = $input['bio'] ?? '';
         $avatar = $input['avatar'] ?? '';
         $regType = $input['registrationType'] ?? ($input['registration_type'] ?? 'PF');
-        $cpf = $input['cpf'] ?? '';
-        $cnpj = $input['cnpj'] ?? '';
+        $cpf = preg_replace('/[^\d]/', '', $input['cpf'] ?? '');
+        $cnpj = preg_replace('/[^\d]/', '', $input['cnpj'] ?? '');
+
+        if ($cpf) {
+            $stmt = $pdo->prepare("SELECT id FROM users WHERE REPLACE(REPLACE(cpf, '.', ''), '-', '') = ? AND id != ?");
+            $stmt->execute([$cpf, $id]);
+            if ($stmt->fetch()) {
+                http_response_code(409);
+                echo json_encode(["error" => "CPF já cadastrado por outro usuário!"]);
+                exit;
+            }
+        }
+
+        if ($cnpj) {
+            $stmt = $pdo->prepare("SELECT id FROM users WHERE REPLACE(REPLACE(REPLACE(cnpj, '.', ''), '-', ''), '/', '') = ? AND id != ?");
+            $stmt->execute([$cnpj, $id]);
+            if ($stmt->fetch()) {
+                http_response_code(409);
+                echo json_encode(["error" => "CNPJ já cadastrado por outro usuário!"]);
+                exit;
+            }
+        }
+
         $pixType = $input['pixType'] ?? ($input['pix_type'] ?? '');
         $pixKey = $input['pixKey'] ?? ($input['pix_key'] ?? '');
         $city = $input['city'] ?? 'São Paulo';
