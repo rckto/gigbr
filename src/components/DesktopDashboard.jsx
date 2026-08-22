@@ -952,7 +952,11 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
 
   const confirmCrowdfundContribution = async () => {
     try {
-      const currentRaised = activeEvent.crowdfundRaised || 0;
+      if (!activeEvent) {
+        showToast("Nenhum show ativo para fomento.", "error");
+        return;
+      }
+      const currentRaised = activeEvent?.crowdfundRaised || 0;
       const newRaised = currentRaised + pendingContributionAmount;
       await updateEvent(activeEventId, {
         ...activeEvent,
@@ -960,8 +964,8 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
       });
 
       const contributor = currentUser?.name || 'Apoiador Anônimo';
-      const deadlineStr = activeEvent.crowdfundDeadline || activeEvent.crowdfund_deadline 
-        ? new Date(activeEvent.crowdfundDeadline || activeEvent.crowdfund_deadline).toLocaleDateString('pt-BR') 
+      const deadlineStr = activeEvent?.crowdfundDeadline || activeEvent?.crowdfund_deadline 
+        ? new Date(activeEvent?.crowdfundDeadline || activeEvent?.crowdfund_deadline).toLocaleDateString('pt-BR') 
         : 'data limite';
         
       addNotification('web', `Apoio de R$ ${pendingContributionAmount.toFixed(2)} programado (PIX de fomento) por ${contributor}. Débito agendado para ${deadlineStr}.`, 'all', activeEventId);
@@ -3048,9 +3052,9 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
                 <div>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>{t.budgetStatus}</span>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginTop: '2px' }}>{activeEvent?.name}</h3>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginTop: '2px' }}>{activeEvent?.name || 'Sem Show Selecionado'}</h3>
                   <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                    📍 {activeEvent?.location}
+                    📍 {activeEvent?.location || 'N/A'}
                   </p>
                 </div>
                 
@@ -3073,16 +3077,16 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
               <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
                 <div>
                   <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>{t.budgetUsage}</p>
-                  <p style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)' }}>R$ {activeEvent?.currentSpend.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  <p style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)' }}>R$ {(activeEvent?.currentSpend || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                 </div>
                 <div>
                   <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>{t.budgetCap}</p>
-                  <p style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)' }}>R$ {activeEvent?.budgetLimit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  <p style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)' }}>R$ {(activeEvent?.budgetLimit || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                 </div>
                 <div>
                   <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>Status do Show</p>
                   <span className={`badge ${activeEvent?.vesselStatus === 'Ativo' ? 'badge-blue' : 'badge-gray'}`} style={{ marginTop: '4px' }}>
-                    {activeEvent?.vesselStatus}
+                    {activeEvent?.vesselStatus || 'Inativo'}
                   </span>
                 </div>
               </div>
@@ -3116,18 +3120,18 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                     <h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginTop: '2px' }}>Apoio Coletivo do Show</h4>
                   </div>
                   
-                  {activeEvent.crowdfundGoal > 0 && (
+                  {activeEvent?.crowdfundGoal > 0 && (
                     <span className="badge badge-blue">
-                      {Math.round(((activeEvent.crowdfundRaised || 0) / activeEvent.crowdfundGoal) * 100)}% Apoiado
+                      {Math.round(((activeEvent?.crowdfundRaised || 0) / activeEvent?.crowdfundGoal) * 100)}% Apoiado
                     </span>
                   )}
                 </div>
 
                 {/* Progress Bar */}
-                {activeEvent.crowdfundGoal > 0 && (
+                {activeEvent?.crowdfundGoal > 0 && (
                   <div style={{ width: '100%', height: '8px', backgroundColor: '#e4e4e7', borderRadius: '4px', overflow: 'hidden', marginBottom: '16px' }}>
                     <div style={{
-                      width: `${Math.min(((activeEvent.crowdfundRaised || 0) / activeEvent.crowdfundGoal) * 100, 100)}%`,
+                      width: `${Math.min(((activeEvent?.crowdfundRaised || 0) / activeEvent?.crowdfundGoal) * 100, 100)}%`,
                       height: '100%',
                       backgroundColor: 'var(--color-blue)',
                       transition: 'width 0.5s ease-out'
@@ -3139,20 +3143,20 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                   <div>
                     <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>Arrecadado</p>
                     <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--color-blue)' }}>
-                      R$ {(activeEvent.crowdfundRaised || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      R$ {(activeEvent?.crowdfundRaised || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                   <div>
                     <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>Meta Fomento</p>
                     <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                      R$ {(activeEvent.crowdfundGoal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      R$ {(activeEvent?.crowdfundGoal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                   <div>
                     <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>Data Limite</p>
                     <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--color-green)' }}>
-                      {activeEvent.crowdfundDeadline || activeEvent.crowdfund_deadline 
-                        ? new Date(activeEvent.crowdfundDeadline || activeEvent.crowdfund_deadline).toLocaleDateString('pt-BR') 
+                      {activeEvent?.crowdfundDeadline || activeEvent?.crowdfund_deadline 
+                        ? new Date(activeEvent?.crowdfundDeadline || activeEvent?.crowdfund_deadline).toLocaleDateString('pt-BR') 
                         : 'A definir'}
                     </p>
                   </div>
@@ -3164,7 +3168,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', backgroundColor: '#f8fafc', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
                     <p style={{ fontSize: '0.75rem', fontFamily: 'monospace', wordBreak: 'break-all' }}>
-                      🔑 Chave PIX: <strong>{activeEvent.pixKey || activeEvent.pix_key || (activeEvent.employer_id === 'admin-1' ? 'admin@gigbr.com.br' : 'roberto@globo.com.br')}</strong>
+                      🔑 Chave PIX: <strong>{activeEvent?.pixKey || activeEvent?.pix_key || (activeEvent?.employer_id === 'admin-1' ? 'admin@gigbr.com.br' : 'roberto@globo.com.br')}</strong>
                     </p>
                     <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
                       Todo valor enviado para esta chave acumula na carteira deste evento.
@@ -6102,8 +6106,8 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
             <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fef3c7', padding: '12px', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', color: '#b45309', textAlign: 'left', lineHeight: '1.4' }}>
               <strong>ℹ️ Regras do Fomento:</strong>
               <ul style={{ margin: '6px 0 0 0', paddingLeft: '18px' }}>
-                <li>O valor <strong>só será debitado de fato</strong> se a meta de <strong>R$ {(activeEvent.crowdfundGoal || 0).toLocaleString('pt-BR')}</strong> for atingida.</li>
-                <li>Data limite da campanha: <strong>{activeEvent.crowdfundDeadline || activeEvent.crowdfund_deadline ? new Date(activeEvent.crowdfundDeadline || activeEvent.crowdfund_deadline).toLocaleDateString('pt-BR') : 'A definir'}</strong>.</li>
+                <li>O valor <strong>só será debitado de fato</strong> se a meta de <strong>R$ {(activeEvent?.crowdfundGoal || 0).toLocaleString('pt-BR')}</strong> for atingida.</li>
+                <li>Data limite da campanha: <strong>{activeEvent?.crowdfundDeadline || activeEvent?.crowdfund_deadline ? new Date(activeEvent?.crowdfundDeadline || activeEvent?.crowdfund_deadline).toLocaleDateString('pt-BR') : 'A definir'}</strong>.</li>
                 <li>Caso a meta não seja batida até a data limite, o agendamento é cancelado sem qualquer cobrança.</li>
               </ul>
             </div>
@@ -6111,7 +6115,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
             {/* Simulated QR Code */}
             <div style={{ display: 'flex', justifyContent: 'center', padding: '10px' }}>
               <img 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=00020101021226840014br.gov.pix.prod0136${activeEvent.pixKey || 'admin@gigbr.com.br'}5204000053039865405${pendingContributionAmount.toFixed(2)}5802BR5920GIGBRCrowdfunding6009SaoPaulo62070503***6304A4F2`}
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=00020101021226840014br.gov.pix.prod0136${activeEvent?.pixKey || 'admin@gigbr.com.br'}5204000053039865405${pendingContributionAmount.toFixed(2)}5802BR5920GIGBRCrowdfunding6009SaoPaulo62070503***6304A4F2`}
                 alt="PIX Crowdfunding QR Code"
                 style={{ border: '4px solid #f3f4f6', borderRadius: '4px' }}
               />
@@ -6120,7 +6124,7 @@ Contato do profissional: ${newUser.phone || 'Não informado'}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <button 
                 onClick={() => {
-                  const pixPayload = `00020101021226840014br.gov.pix.prod0136${activeEvent.pixKey || 'admin@gigbr.com.br'}5204000053039865405${pendingContributionAmount.toFixed(2)}5802BR5920GIGBRCrowdfunding6009SaoPaulo62070503***6304A4F2`;
+                  const pixPayload = `00020101021226840014br.gov.pix.prod0136${activeEvent?.pixKey || 'admin@gigbr.com.br'}5204000053039865405${pendingContributionAmount.toFixed(2)}5802BR5920GIGBRCrowdfunding6009SaoPaulo62070503***6304A4F2`;
                   navigator.clipboard.writeText(pixPayload);
                   setCrowdfundPixCopied(true);
                   setTimeout(() => setCrowdfundPixCopied(false), 2000);
