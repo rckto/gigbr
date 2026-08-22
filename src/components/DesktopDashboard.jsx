@@ -477,6 +477,10 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Layout Tab State: 'talentos', 'vagas', 'cadastro', 'financeiro', 'admin', 'freelancer_dash'
+  const [dashboardTab, setDashboardTab] = useState('talentos');
+  const [vagasSubTab, setVagasSubTab] = useState('vagas'); // 'vagas' or 'eventos'
+
   useEffect(() => {
     const role = currentUser?.role || userRole;
     if (role === 'freelancer') {
@@ -489,10 +493,6 @@ const DesktopDashboard = ({ showSimulator, toggleSimulator }) => {
       }
     }
   }, [dashboardTab, currentUser, userRole]);
-
-  // Layout Tab State: 'talentos', 'vagas', 'cadastro', 'financeiro', 'admin', 'freelancer_dash'
-  const [dashboardTab, setDashboardTab] = useState('talentos');
-  const [vagasSubTab, setVagasSubTab] = useState('vagas'); // 'vagas' or 'eventos'
 
   // Automatically default to Talent Directory (talentos) upon login as requested
   
